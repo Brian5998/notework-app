@@ -145,6 +145,36 @@ const insightsPreview = (
   </svg>
 )
 
+const voicePreview = (
+  <svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style={{ width: '90%', height: '90%' }}>
+    <rect x="0" y="0" width="340" height="200" rx="10" fill="var(--bg)"/>
+    {/* Microphone icon */}
+    <circle cx="80" cy="70" r="32" fill="var(--accent)" opacity="0.1"/>
+    <circle cx="80" cy="70" r="22" fill="var(--accent)" opacity="0.2"/>
+    <rect x="74" y="52" width="12" height="22" rx="6" fill="var(--accent)"/>
+    <path d="M68 68v4a12 12 0 0 0 24 0v-4" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round"/>
+    <line x1="80" y1="84" x2="80" y2="90" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round"/>
+    {/* Sound waves */}
+    <path d="M100 58 Q104 50 108 58" fill="none" stroke="var(--accent)" strokeWidth="1" opacity="0.6"/>
+    <path d="M104 54 Q110 42 116 54" fill="none" stroke="var(--accent)" strokeWidth="1" opacity="0.4"/>
+    <path d="M108 50 Q116 34 124 50" fill="none" stroke="var(--accent)" strokeWidth="1" opacity="0.2"/>
+    {/* Recording indicator */}
+    <circle cx="80" cy="110" r="4" fill="#E24B4A"/>
+    <text x="90" y="114" fontFamily="'DM Sans',sans-serif" fontSize="9" fill="var(--ink-muted)">2:34 recording</text>
+    {/* Transcript output */}
+    <rect x="160" y="20" width="164" height="160" rx="8" fill="var(--bg-card)" stroke="var(--border)" strokeWidth="0.5"/>
+    <text x="172" y="40" fontFamily="'DM Sans',sans-serif" fontSize="8" fill="var(--accent)" fontWeight="500">LIVE TRANSCRIPT</text>
+    <text x="172" y="58" fontFamily="'DM Sans',sans-serif" fontSize="8.5" fill="var(--ink)">The mitochondria is the</text>
+    <text x="172" y="72" fontFamily="'DM Sans',sans-serif" fontSize="8.5" fill="var(--ink)">powerhouse of the cell. It</text>
+    <text x="172" y="86" fontFamily="'DM Sans',sans-serif" fontSize="8.5" fill="var(--ink)">generates ATP through</text>
+    <text x="172" y="100" fontFamily="'DM Sans',sans-serif" fontSize="8.5" fill="var(--ink)">cellular respiration, which</text>
+    <text x="172" y="114" fontFamily="'DM Sans',sans-serif" fontSize="8.5" fill="var(--ink)">involves the electron</text>
+    <text x="172" y="128" fontFamily="'DM Sans',sans-serif" fontSize="8.5" fill="var(--ink-faint)" fontStyle="italic">transport chain...</text>
+    <rect x="172" y="146" width="64" height="22" rx="11" fill="var(--accent)"/>
+    <text x="192" y="161" fontFamily="'DM Sans',sans-serif" fontSize="8" fill="white">Save Note</text>
+  </svg>
+)
+
 const handwritingPreview = (
   <svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style={{ width: '90%', height: '90%' }}>
     <rect x="0" y="0" width="340" height="200" rx="10" fill="var(--bg)"/>
@@ -233,6 +263,13 @@ const features = [
     body: "Snap a photo of your handwritten lecture notes, problem sets, or whiteboard diagrams. Notework reads your handwriting with AI vision and converts it to searchable, linkable digital text — so nothing stays trapped on paper.",
     reverse: false,
     preview: handwritingPreview,
+  },
+  {
+    num: '08 — Voice',
+    title: 'Record audio, get text',
+    body: "Hit record during a lecture, study session, or brainstorm. Notework transcribes your speech in real time — no uploads, no waiting. The transcript becomes a note you can search, link, quiz from, and cross-reference with everything else you've written.",
+    reverse: true,
+    preview: voicePreview,
   },
 ]
 
