@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/* ─── Design tokens ─────────────────────────────────────── */
+:root {
+  --bg: #F7F5F0;
+  --bg-card: #EFEDE7;
+  --ink: #1A1917;
+  --ink-muted: #6B6860;
+  --ink-faint: #B5B3AC;
+  --accent: #2D5A3D;
+  --accent-light: #D6E8DC;
+  --accent-mid: #4A8C62;
+  --border: rgba(26, 25, 23, 0.1);
+  --border-strong: rgba(26, 25, 23, 0.2);
+  --conflict: #E24B4A;
+  --radius: 12px;
+  --radius-lg: 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111210;
+    --bg-card: #1C1C1A;
+    --ink: #F0EEE8;
+    --ink-muted: #9A9890;
+    --ink-faint: #4A4845;
+    --accent: #5CB87A;
+    --accent-light: #1A2E20;
+    --accent-mid: #4A8C62;
+    --border: rgba(240, 238, 232, 0.08);
+    --border-strong: rgba(240, 238, 232, 0.15);
+  }
+}
+
+/* ─── Tailwind theme ────────────────────────────────────── */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-card: var(--bg-card);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-mid: var(--accent-mid);
+  --color-conflict: var(--conflict);
+
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+
+  --radius-default: 12px;
+  --radius-lg: 20px;
+}
+
+/* ─── Base ──────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 300;
+  line-height: 1.7;
+  font-size: 16px;
+  overflow-x: hidden;
+}
