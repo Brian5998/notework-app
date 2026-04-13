@@ -8,6 +8,7 @@ import { useLinks } from '@/lib/LinksContext'
 import { Note } from '@/lib/types'
 
 const DrivePickerModal = dynamic(() => import('./DrivePickerModal'), { ssr: false })
+const RecordingPanel = dynamic(() => import('./RecordingPanel'), { ssr: false })
 
 const FOREST_THRESHOLD = 3
 type SortOrder = 'newest' | 'oldest' | 'az'
@@ -29,6 +30,7 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
   const [uploading, setUploading] = useState(false)
   const [uploadLabel, setUploadLabel] = useState('Uploading…')
   const [showDrivePicker, setShowDrivePicker] = useState(false)
+  const [showRecording, setShowRecording] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -128,6 +130,18 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
           onImport={(title, content) => {
             const note = addNote(title, content)
             onSelect(note.id)
+          }}
+        />
+      )}
+
+      {/* Recording modal */}
+      {showRecording && (
+        <RecordingPanel
+          onClose={() => setShowRecording(false)}
+          onSave={(noteTitle, content) => {
+            const note = addNote(noteTitle, content)
+            onSelect(note.id)
+            setShowRecording(false)
           }}
         />
       )}
@@ -264,6 +278,16 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
                 </svg>
                 Scan handwritten notes
+              </button>
+              <div style={{ height: '0.5px', background: 'var(--border)', margin: '0 0.75rem' }} />
+              <button onClick={() => { setMenuOpen(false); setShowRecording(true) }} style={menuItemStyle} onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-light)')} onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}>
+                <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+                Record audio
               </button>
               <div style={{ height: '0.5px', background: 'var(--border)', margin: '0 0.75rem' }} />
               <button onClick={() => { setMenuOpen(false); setShowDrivePicker(true) }} style={menuItemStyle} onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-light)')} onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}>
