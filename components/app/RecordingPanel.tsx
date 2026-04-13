@@ -16,6 +16,7 @@ export default function RecordingPanel({ onSave, onClose }: Props) {
   const [title, setTitle] = useState('')
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const finalizedRef = useRef(0)
 
   const supported = typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
 
@@ -42,6 +43,7 @@ export default function RecordingPanel({ onSave, onClose }: Props) {
     setIsRecording(true)
     setSeconds(0)
     setInterimText('')
+    finalizedRef.current = 0
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     const recognition = new SpeechRecognition()
@@ -50,22 +52,23 @@ export default function RecordingPanel({ onSave, onClose }: Props) {
     recognition.lang = 'en-US'
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalText = ''
+      let newFinalText = ''
       let interim = ''
 
-      for (let i = 0; i < event.results.length; i++) {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
-          finalText += result[0].transcript + ' '
+          newFinalText += result[0].transcript + ' '
+          finalizedRef.current = i + 1
         } else {
           interim += result[0].transcript
         }
       }
 
-      if (finalText) {
+      if (newFinalText) {
         setTranscript((prev) => {
-          const combined = prev + finalText
-          return combined.trim()
+          const separator = prev && !prev.endsWith(' ') ? ' ' : ''
+          return prev + separator + newFinalText.trim()
         })
       }
       setInterimText(interim)
