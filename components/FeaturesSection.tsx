@@ -145,6 +145,45 @@ const insightsPreview = (
   </svg>
 )
 
+const handwritingPreview = (
+  <svg viewBox="0 0 340 200" xmlns="http://www.w3.org/2000/svg" style={{ width: '90%', height: '90%' }}>
+    <rect x="0" y="0" width="340" height="200" rx="10" fill="var(--bg)"/>
+    {/* Left side: handwritten note mockup */}
+    <rect x="16" y="16" width="148" height="168" rx="8" fill="var(--bg-card)" stroke="var(--border-strong)" strokeWidth="0.5"/>
+    <line x1="26" y1="40" x2="154" y2="40" stroke="var(--border)" strokeWidth="0.3"/>
+    <line x1="26" y1="58" x2="154" y2="58" stroke="var(--border)" strokeWidth="0.3"/>
+    <line x1="26" y1="76" x2="154" y2="76" stroke="var(--border)" strokeWidth="0.3"/>
+    <line x1="26" y1="94" x2="154" y2="94" stroke="var(--border)" strokeWidth="0.3"/>
+    <line x1="26" y1="112" x2="154" y2="112" stroke="var(--border)" strokeWidth="0.3"/>
+    {/* Wavy handwriting lines */}
+    <path d="M30 36 Q40 32 50 36 Q60 40 70 36 Q80 32 90 36 Q100 40 110 36 Q120 32 130 36" fill="none" stroke="var(--ink)" strokeWidth="1" opacity="0.5"/>
+    <path d="M30 54 Q42 50 54 54 Q66 58 78 54 Q90 50 102 54 Q114 58 126 54 Q138 50 148 54" fill="none" stroke="var(--ink)" strokeWidth="1" opacity="0.5"/>
+    <path d="M30 72 Q38 68 46 72 Q54 76 62 72 Q70 68 78 72 Q86 76 94 72 Q102 68 118 72" fill="none" stroke="var(--ink)" strokeWidth="1" opacity="0.5"/>
+    <path d="M30 90 Q44 86 58 90 Q72 94 86 90 Q100 86 114 90 Q128 94 142 90" fill="none" stroke="var(--ink)" strokeWidth="1" opacity="0.5"/>
+    <path d="M30 108 Q40 104 50 108 Q60 112 70 108 Q80 104 90 108" fill="none" stroke="var(--ink)" strokeWidth="1" opacity="0.5"/>
+    <text x="90" y="150" textAnchor="middle" fontFamily="'DM Sans',sans-serif" fontSize="7" fill="var(--ink-faint)">handwritten_notes.jpg</text>
+    {/* Arrow */}
+    <path d="M172 100 L192 100" stroke="var(--accent)" strokeWidth="1.5" markerEnd="url(#hwArrow)"/>
+    <defs>
+      <marker id="hwArrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="var(--accent)"/>
+      </marker>
+    </defs>
+    <text x="182" y="92" textAnchor="middle" fontFamily="'DM Sans',sans-serif" fontSize="7" fill="var(--accent)" fontWeight="500">AI</text>
+    {/* Right side: digital output */}
+    <rect x="200" y="16" width="124" height="168" rx="8" fill="var(--bg-card)" stroke="var(--accent)" strokeWidth="0.8"/>
+    <text x="210" y="36" fontFamily="'DM Sans',sans-serif" fontSize="9" fill="var(--accent)" fontWeight="500">Converted Note</text>
+    <text x="210" y="54" fontFamily="'DM Sans',sans-serif" fontSize="8" fill="var(--ink)">Mitosis is the process</text>
+    <text x="210" y="67" fontFamily="'DM Sans',sans-serif" fontSize="8" fill="var(--ink)">of cell division that</text>
+    <text x="210" y="80" fontFamily="'DM Sans',sans-serif" fontSize="8" fill="var(--ink)">results in two identical</text>
+    <text x="210" y="93" fontFamily="'DM Sans',sans-serif" fontSize="8" fill="var(--ink)">daughter cells...</text>
+    <line x1="210" y1="106" x2="314" y2="106" stroke="var(--border)" strokeWidth="0.5"/>
+    <text x="210" y="122" fontFamily="'DM Sans',sans-serif" fontSize="7" fill="var(--accent)">✓ Searchable</text>
+    <text x="210" y="136" fontFamily="'DM Sans',sans-serif" fontSize="7" fill="var(--accent)">✓ Linkable</text>
+    <text x="210" y="150" fontFamily="'DM Sans',sans-serif" fontSize="7" fill="var(--accent)">✓ Quiz-ready</text>
+  </svg>
+)
+
 const features = [
   {
     num: '01 — Search',
@@ -187,6 +226,13 @@ const features = [
     body: 'See which concepts you revisit most and how your understanding changes over time. A heatmap of your intellectual footprint, and a timeline of how each idea deepened, revised, or contradicted itself.',
     reverse: true,
     preview: insightsPreview,
+  },
+  {
+    num: '07 — Handwriting',
+    title: 'Scan handwritten notes instantly',
+    body: "Snap a photo of your handwritten lecture notes, problem sets, or whiteboard diagrams. Notework reads your handwriting with AI vision and converts it to searchable, linkable digital text — so nothing stays trapped on paper.",
+    reverse: false,
+    preview: handwritingPreview,
   },
 ]
 

@@ -58,6 +58,13 @@ const rows = [
     evernote: '—',
   },
   {
+    feature: 'Handwriting to digital notes',
+    notework: '✓',
+    goodnotes: '✓',
+    obsidian: '—',
+    evernote: '—',
+  },
+  {
     feature: 'Built for students',
     notework: '✓',
     goodnotes: '✓',

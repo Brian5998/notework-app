@@ -27,8 +27,10 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
   const [filterQuery, setFilterQuery] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadLabel, setUploadLabel] = useState('Uploading…')
   const [showDrivePicker, setShowDrivePicker] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   function handleNewFromScratch() {
     setMenuOpen(false)
@@ -41,11 +43,17 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
     fileInputRef.current?.click()
   }
 
+  function handleScanClick() {
+    setMenuOpen(false)
+    imageInputRef.current?.click()
+  }
+
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     e.target.value = ''
     setUploading(true)
+    setUploadLabel('Uploading…')
     try {
       const form = new FormData()
       form.append('file', file)
@@ -57,6 +65,29 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
     } catch (err) {
       console.error('Upload failed:', err)
       alert('Could not parse the file. Please try another.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setUploading(true)
+    setUploadLabel('Reading handwriting…')
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('mode', 'handwriting')
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      const note = addNote(data.title || file.name, data.content || '')
+      onSelect(note.id)
+    } catch (err) {
+      console.error('Handwriting scan failed:', err)
+      alert('Could not read the handwritten notes. Please try a clearer image.')
     } finally {
       setUploading(false)
     }
@@ -86,8 +117,9 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Hidden file input */}
+      {/* Hidden file inputs */}
       <input ref={fileInputRef} type="file" accept=".pdf,.txt,.md" style={{ display: 'none' }} onChange={handleFileChange} />
+      <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" capture="environment" style={{ display: 'none' }} onChange={handleImageChange} />
 
       {/* Drive picker modal */}
       {showDrivePicker && (
@@ -227,6 +259,13 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
                 Upload file (PDF, TXT, MD)
               </button>
               <div style={{ height: '0.5px', background: 'var(--border)', margin: '0 0.75rem' }} />
+              <button onClick={handleScanClick} style={menuItemStyle} onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-light)')} onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}>
+                <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
+                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                </svg>
+                Scan handwritten notes
+              </button>
+              <div style={{ height: '0.5px', background: 'var(--border)', margin: '0 0.75rem' }} />
               <button onClick={() => { setMenuOpen(false); setShowDrivePicker(true) }} style={menuItemStyle} onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-light)')} onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}>
                 <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
                   <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
@@ -258,7 +297,7 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
             transition: 'background 0.15s',
           }}
         >
-          {uploading ? 'Uploading…' : '+ New Note'}
+          {uploading ? uploadLabel : '+ New Note'}
         </button>
       </div>
 

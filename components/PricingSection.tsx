@@ -21,6 +21,7 @@ const scholarFeatures = [
   { label: 'Quiz mode from your notes', has: true },
   { label: 'Knowledge evolution tracking', has: true },
   { label: 'Concept heatmap', has: true },
+  { label: 'Handwritten note scanning', has: true },
   { label: 'Import from Notion, Obsidian', has: true },
   { label: 'Priority support', has: true },
 ]
