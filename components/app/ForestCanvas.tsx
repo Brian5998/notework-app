@@ -12,6 +12,8 @@ export type GraphNode = {
   vx: number
   vy: number
   radius: number
+  connectionCount?: number
+  createdAt?: string
 }
 
 export type GraphEdge = {
@@ -24,6 +26,7 @@ type Props = {
   nodes: GraphNode[]
   edges: GraphEdge[]
   onNodeClick: (id: string, type: 'note' | 'cluster') => void
+  onNodeHover?: (id: string | null, type: 'note' | 'cluster' | null) => void
   highlightedNodeIds?: string[]
 }
 
@@ -34,7 +37,7 @@ const GRAVITY = 0.016
 const DAMPING = 0.78
 const MAX_FRAMES = 600
 
-export default function ForestCanvas({ nodes: initNodes, edges, onNodeClick, highlightedNodeIds }: Props) {
+export default function ForestCanvas({ nodes: initNodes, edges, onNodeClick, onNodeHover, highlightedNodeIds }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const nodesRef = useRef<GraphNode[]>([])
   const rafRef = useRef<number>(0)
@@ -276,6 +279,10 @@ export default function ForestCanvas({ nodes: initNodes, edges, onNodeClick, hig
 
       } else {
         // ── Note node ────────────────────────────────────────────────────────
+        const isIsolated = (n.connectionCount ?? 2) <= 1
+        const nodeOpacity = isIsolated ? 0.5 : 1
+        const nodeScale = isIsolated ? 0.75 : 1
+        const effectiveR = r * nodeScale
 
         // Conflict highlight ring
         if (isHl) {
@@ -290,31 +297,41 @@ export default function ForestCanvas({ nodes: initNodes, edges, onNodeClick, hig
 
         // Hover glow
         if (isH) {
-          const gl = ctx.createRadialGradient(n.x, n.y, r * 0.4, n.x, n.y, r * 2.2)
+          const gl = ctx.createRadialGradient(n.x, n.y, effectiveR * 0.4, n.x, n.y, effectiveR * 2.2)
           gl.addColorStop(0, 'rgba(92,184,122,0.2)')
           gl.addColorStop(1, 'rgba(92,184,122,0)')
-          ctx.beginPath(); ctx.arc(n.x, n.y, r * 2.2, 0, Math.PI * 2)
+          ctx.beginPath(); ctx.arc(n.x, n.y, effectiveR * 2.2, 0, Math.PI * 2)
           ctx.fillStyle = gl; ctx.fill()
         }
 
+        ctx.globalAlpha = isH ? 1 : nodeOpacity
+
         // Main fill
-        const fill = ctx.createRadialGradient(n.x - r * 0.28, n.y - r * 0.28, 0, n.x, n.y, r)
+        const fill = ctx.createRadialGradient(n.x - effectiveR * 0.28, n.y - effectiveR * 0.28, 0, n.x, n.y, effectiveR)
         fill.addColorStop(0, isH ? '#2E6040' : '#1E3228')
         fill.addColorStop(1, isH ? '#1C3C2A' : '#111D17')
-        ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2)
+        ctx.beginPath(); ctx.arc(n.x, n.y, effectiveR, 0, Math.PI * 2)
         ctx.fillStyle = fill; ctx.fill()
         ctx.strokeStyle = isH
           ? 'rgba(92,184,122,0.85)'
-          : isHl ? 'rgba(245,158,11,0.7)' : 'rgba(92,184,122,0.28)'
-        ctx.lineWidth = (isH ? 1.5 : 1) / zoomRef.current
+          : isHl ? 'rgba(245,158,11,0.7)'
+          : isIsolated ? 'rgba(92,184,122,0.15)' : 'rgba(92,184,122,0.28)'
+        ctx.lineWidth = (isH ? 1.5 : isIsolated ? 0.7 : 1) / zoomRef.current
+        if (isIsolated && !isH) {
+          const dl = 4 / zoomRef.current
+          ctx.setLineDash([dl, dl])
+        }
         ctx.stroke()
+        if (isIsolated && !isH) ctx.setLineDash([])
 
         // Label
-        ctx.fillStyle = isH ? '#ffffff' : 'rgba(240,238,232,0.82)'
-        ctx.font = '500 10px system-ui,sans-serif'
+        ctx.fillStyle = isH ? '#ffffff' : `rgba(240,238,232,${isIsolated ? 0.55 : 0.82})`
+        ctx.font = `500 ${isIsolated ? 9 : 10}px system-ui,sans-serif`
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
         const lbl = n.label.length > 13 ? n.label.slice(0, 12) + '…' : n.label
         ctx.fillText(lbl, n.x, n.y)
+
+        ctx.globalAlpha = 1
       }
     }
 
@@ -417,6 +434,7 @@ export default function ForestCanvas({ nodes: initNodes, edges, onNodeClick, hig
       return
     }
     const node = nodeAt(e.clientX, e.clientY)
+    const prevHovered = hoveredRef.current
     hoveredRef.current = node?.id ?? null
     hoveredEdgeRef.current = node ? null : edgeAt(e.clientX, e.clientY)
     if (canvasRef.current) {
@@ -425,6 +443,9 @@ export default function ForestCanvas({ nodes: initNodes, edges, onNodeClick, hig
       tooltipRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
     }
     if (frameRef.current >= MAX_FRAMES) frameRef.current = MAX_FRAMES - 1
+    if (onNodeHover && (node?.id ?? null) !== prevHovered) {
+      onNodeHover(node?.id ?? null, node?.type ?? null)
+    }
   }
 
   function handleMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -447,6 +468,7 @@ export default function ForestCanvas({ nodes: initNodes, edges, onNodeClick, hig
     hoveredRef.current = null
     hoveredEdgeRef.current = null
     panningRef.current = false
+    if (onNodeHover) onNodeHover(null, null)
   }
 
   function handleClick(e: React.MouseEvent<HTMLCanvasElement>) {

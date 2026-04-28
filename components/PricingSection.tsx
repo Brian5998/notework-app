@@ -26,26 +26,52 @@ const scholarFeatures = [
   { label: 'Priority support', has: true },
 ]
 
+function CheckRow({ has, label, accent }: { has: boolean; label: string; accent?: boolean }) {
+  return (
+    <li
+      style={{
+        fontSize: '14px',
+        color: has ? 'var(--m-text)' : 'var(--m-text-2)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.7rem',
+      }}
+    >
+      {has ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent ? 'var(--m-accent)' : 'var(--m-accent)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <span style={{ color: 'var(--m-text-3)', fontSize: '14px', flexShrink: 0, width: 14, textAlign: 'center' }}>—</span>
+      )}
+      {label}
+    </li>
+  )
+}
+
 export default function PricingSection() {
   return (
     <section id="pricing" style={{ padding: '7rem 2.5rem', maxWidth: 1100, margin: '0 auto' }}>
       <FadeUp>
-        <div style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '1rem' }}>
+        <div className="label" style={{ marginBottom: '1rem' }}>
           Pricing
         </div>
         <h2
+          className="font-serif-d"
           style={{
-            fontFamily: 'var(--font-instrument-serif), Georgia, serif',
-            fontSize: 'clamp(1.9rem, 3.5vw, 2.7rem)',
-            lineHeight: 1.15,
-            letterSpacing: '-0.03em',
-            marginBottom: '1rem',
-            color: 'var(--ink)',
+            fontSize: 'clamp(2rem, 4.2vw, 48px)',
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            marginBottom: '1.25rem',
+            color: 'var(--m-text)',
+            fontWeight: 400,
           }}
         >
-          Simple, student-friendly pricing.
+          Simple,{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--m-accent)' }}>student-friendly</em>{' '}
+          pricing.
         </h2>
-        <p style={{ fontSize: '1.05rem', color: 'var(--ink-muted)', maxWidth: 520, marginBottom: '0' }}>
+        <p style={{ fontSize: '17px', color: 'var(--m-text-2)', maxWidth: 560, marginBottom: '0', lineHeight: 1.7 }}>
           Start free. Upgrade when your notes start working for you.
         </p>
 
@@ -60,55 +86,47 @@ export default function PricingSection() {
           {/* Starter */}
           <div
             style={{
-              background: 'var(--bg-card)',
-              border: '0.5px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '2.25rem',
+              background: 'var(--m-surface)',
+              border: '1px solid var(--m-border)',
+              borderRadius: 18,
+              padding: '2.5rem',
             }}
           >
             <div
+              className="font-syne"
               style={{
                 display: 'inline-block',
-                fontSize: '0.7rem',
-                fontWeight: 500,
-                letterSpacing: '0.12em',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.15em',
                 textTransform: 'uppercase',
-                marginBottom: '1rem',
-                padding: '0.3rem 0.75rem',
+                marginBottom: '1.25rem',
+                padding: '4px 12px',
                 borderRadius: '100px',
-                border: '0.5px solid var(--border-strong)',
-                color: 'var(--ink-muted)',
+                border: '1px solid var(--m-border-bright)',
+                color: 'var(--m-text-2)',
               }}
             >
               Free
             </div>
-            <div style={{ fontFamily: 'var(--font-instrument-serif), Georgia, serif', fontSize: '1.6rem', letterSpacing: '-0.02em', marginBottom: '0.4rem', color: 'var(--ink)' }}>
+            <div className="font-serif-d" style={{ fontSize: '24px', letterSpacing: '-0.01em', marginBottom: '0.6rem', color: 'var(--m-text)' }}>
               Starter
             </div>
-            <div style={{ fontSize: '2.25rem', fontWeight: 300, letterSpacing: '-0.04em', marginBottom: '0.25rem', color: 'var(--ink)' }}>
-              $0{' '}
-              <span style={{ fontSize: '1rem', fontWeight: 400, color: 'var(--ink-muted)' }}>/ month</span>
+            <div
+              className="font-serif-d"
+              style={{ fontSize: '48px', fontWeight: 400, letterSpacing: '-0.03em', marginBottom: '0.4rem', color: 'var(--m-text)', lineHeight: 1 }}
+            >
+              $0
+              <span style={{ fontSize: '15px', color: 'var(--m-text-2)', fontFamily: 'var(--font-dm-sans), sans-serif', marginLeft: 6 }}>
+                / month
+              </span>
             </div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--ink-muted)', marginBottom: '1.75rem' }}>
+            <div style={{ fontSize: '14px', color: 'var(--m-text-2)', marginBottom: '2rem', lineHeight: 1.6 }}>
               Everything you need to get started. No credit card required.
             </div>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: 0 }}>
               {starterFeatures.map((f) => (
-                <li
-                  key={f.label}
-                  style={{
-                    fontSize: '0.875rem',
-                    color: f.has ? 'var(--ink)' : 'var(--ink-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                  }}
-                >
-                  <span style={{ color: f.has ? 'var(--accent)' : 'var(--ink-faint)', fontSize: f.has ? '1em' : '0.75rem', flexShrink: 0 }}>
-                    {f.has ? '✓' : '—'}
-                  </span>
-                  {f.label}
-                </li>
+                <CheckRow key={f.label} has={f.has} label={f.label} />
               ))}
             </ul>
           </div>
@@ -116,67 +134,62 @@ export default function PricingSection() {
           {/* Scholar */}
           <div
             style={{
-              background: '#1A1917',
-              border: '0.5px solid #1A1917',
-              borderRadius: 'var(--radius-lg)',
-              padding: '2.25rem',
-              color: 'rgba(240,238,232,0.9)',
+              background: 'var(--m-accent-dim)',
+              border: '1px solid var(--m-accent-border)',
+              borderRadius: 18,
+              padding: '2.5rem',
+              position: 'relative',
             }}
           >
             <div
+              className="font-syne"
               style={{
                 display: 'inline-block',
-                fontSize: '0.7rem',
-                fontWeight: 500,
-                letterSpacing: '0.12em',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.15em',
                 textTransform: 'uppercase',
-                marginBottom: '1rem',
-                padding: '0.3rem 0.75rem',
+                marginBottom: '1.25rem',
+                padding: '4px 12px',
                 borderRadius: '100px',
-                border: '0.5px solid rgba(240,238,232,0.2)',
-                color: 'rgba(240,238,232,0.7)',
+                border: '1px solid var(--m-accent-border)',
+                color: 'var(--m-accent)',
+                background: 'rgba(126, 232, 162, 0.08)',
               }}
             >
-              Premium
-            </div>
-            <div style={{ fontFamily: 'var(--font-instrument-serif), Georgia, serif', fontSize: '1.6rem', letterSpacing: '-0.02em', marginBottom: '0.4rem', color: 'rgba(240,238,232,0.9)' }}>
               Scholar
             </div>
-            <div style={{ fontSize: '2.25rem', fontWeight: 300, letterSpacing: '-0.04em', marginBottom: '0.25rem', color: 'rgba(240,238,232,0.9)' }}>
-              $15{' '}
-              <span style={{ fontSize: '1rem', fontWeight: 400, color: 'rgba(240,238,232,0.5)' }}>/ month</span>
+            <div className="font-serif-d" style={{ fontSize: '24px', letterSpacing: '-0.01em', marginBottom: '0.6rem', color: 'var(--m-text)' }}>
+              Scholar
             </div>
-            <div style={{ fontSize: '0.875rem', color: 'rgba(240,238,232,0.6)', marginBottom: '1.75rem' }}>
+            <div
+              className="font-serif-d"
+              style={{ fontSize: '48px', fontWeight: 400, letterSpacing: '-0.03em', marginBottom: '0.4rem', color: 'var(--m-text)', lineHeight: 1 }}
+            >
+              $15
+              <span style={{ fontSize: '15px', color: 'var(--m-text-2)', fontFamily: 'var(--font-dm-sans), sans-serif', marginLeft: 6 }}>
+                / month
+              </span>
+            </div>
+            <div style={{ fontSize: '14px', color: 'var(--m-text-2)', marginBottom: '2rem', lineHeight: 1.6 }}>
               Join the waitlist for early-access pricing — locked in for life.
             </div>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: 0 }}>
               {scholarFeatures.map((f) => (
-                <li
-                  key={f.label}
-                  style={{
-                    fontSize: '0.875rem',
-                    color: 'rgba(240,238,232,0.9)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                  }}
-                >
-                  <span style={{ color: '#5CB87A', flexShrink: 0 }}>✓</span>
-                  {f.label}
-                </li>
+                <CheckRow key={f.label} has={f.has} label={f.label} accent />
               ))}
             </ul>
           </div>
         </div>
 
         <p
+          className="font-mono"
           style={{
             marginTop: '3rem',
             textAlign: 'center',
-            fontSize: '0.9rem',
-            color: 'var(--ink-muted)',
-            fontStyle: 'italic',
-            fontFamily: 'var(--font-instrument-serif), Georgia, serif',
+            fontSize: '12px',
+            color: 'var(--m-text-3)',
+            letterSpacing: '0.02em',
           }}
         >
           Pricing announced at launch. Waitlist members receive early-access rates, permanently.

@@ -4,48 +4,53 @@ export default function Footer() {
   return (
     <footer
       style={{
-        padding: '3rem 2.5rem',
+        padding: '2rem 2.5rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '1.5rem',
-        borderTop: '0.5px solid var(--border)',
+        gap: '1.25rem',
+        borderTop: '1px solid var(--m-border)',
         maxWidth: 1100,
         margin: '0 auto',
       }}
     >
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
         <a
           href="#"
+          className="font-syne"
           style={{
-            fontFamily: 'var(--font-instrument-serif), Georgia, serif',
-            fontSize: '1.1rem',
-            color: 'var(--ink)',
+            fontSize: '14px',
+            fontWeight: 800,
+            color: 'var(--m-text)',
             textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'baseline',
+            gap: 2,
           }}
         >
-          Note<span style={{ color: 'var(--accent)' }}>work</span>
+          Notework
+          <span
+            style={{
+              display: 'inline-block',
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: 'var(--m-accent)',
+            }}
+          />
         </a>
-        <div style={{ fontSize: '0.8rem', color: 'var(--ink-faint)', marginTop: '0.2rem' }}>
+        <span
+          className="font-mono"
+          style={{ fontSize: '12px', color: 'var(--m-text-3)' }}
+        >
           Infrastructure for your knowledge.
-        </div>
+        </span>
       </div>
 
-      <div style={{ display: 'flex', gap: '1.75rem', flexWrap: 'wrap' }}>
+      <div className="font-syne" style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
         {['About', 'Blog', 'Twitter / X', 'Contact'].map((label) => (
-          <a
-            key={label}
-            href="#"
-            style={{
-              fontSize: '0.875rem',
-              color: 'var(--ink-muted)',
-              textDecoration: 'none',
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--ink)')}
-            onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--ink-muted)')}
-          >
+          <a key={label} href="#" className="nav-link" style={{ fontSize: '12px' }}>
             {label}
           </a>
         ))}

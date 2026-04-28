@@ -3,6 +3,7 @@ export type Note = {
   title: string
   content: string
   createdAt: string
+  tags?: string[]
 }
 
 export type NoteLink = {

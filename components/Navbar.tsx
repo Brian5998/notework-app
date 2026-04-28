@@ -4,69 +4,44 @@ export default function Navbar() {
   return (
     <nav
       style={{
-        position: 'fixed',
+        position: 'sticky',
         top: 0,
-        left: 0,
-        right: 0,
         zIndex: 100,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '1.25rem 2.5rem',
-        background: 'var(--bg)',
-        borderBottom: '0.5px solid var(--border)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(12, 12, 14, 0.72)',
+        borderBottom: '1px solid var(--m-border)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
       }}
     >
       <a
         href="#"
         style={{
           fontFamily: 'var(--font-instrument-serif), Georgia, serif',
-          fontSize: '1.35rem',
-          color: 'var(--ink)',
+          fontSize: '26px',
+          fontWeight: 400,
+          color: 'var(--m-text)',
           textDecoration: 'none',
           letterSpacing: '-0.02em',
+          display: 'inline-flex',
+          alignItems: 'baseline',
+          lineHeight: 1,
         }}
       >
-        Note<span style={{ color: 'var(--accent)' }}>work</span>
+        Note
+        <span style={{ color: 'var(--m-accent)', fontStyle: 'italic' }}>work</span>
       </a>
 
-      <div className="hidden sm:flex items-center gap-8">
+      <div className="hidden sm:flex items-center" style={{ gap: '2.5rem' }}>
         {(['Features', 'Compare', 'Pricing'] as const).map((label) => (
-          <a
-            key={label}
-            href={`#${label.toLowerCase()}`}
-            style={{
-              fontSize: '0.875rem',
-              color: 'var(--ink-muted)',
-              textDecoration: 'none',
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={(e) =>
-              ((e.target as HTMLElement).style.color = 'var(--ink)')
-            }
-            onMouseLeave={(e) =>
-              ((e.target as HTMLElement).style.color = 'var(--ink-muted)')
-            }
-          >
+          <a key={label} href={`#${label.toLowerCase()}`} className="nav-link">
             {label}
           </a>
         ))}
-        <a
-          href="/app"
-          style={{
-            background: 'var(--ink)',
-            color: 'var(--bg)',
-            padding: '0.5rem 1.25rem',
-            borderRadius: '100px',
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            textDecoration: 'none',
-            transition: 'opacity 0.2s',
-          }}
-          onMouseEnter={(e) => ((e.target as HTMLElement).style.opacity = '0.8')}
-          onMouseLeave={(e) => ((e.target as HTMLElement).style.opacity = '1')}
-        >
+        <a href="/app" className="btn-accent">
           Open app
         </a>
       </div>

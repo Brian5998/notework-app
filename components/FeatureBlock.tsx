@@ -17,50 +17,57 @@ export default function FeatureBlock({ num, title, body, reverse = false, previe
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '4rem',
           alignItems: 'center',
-          padding: '3.5rem 0',
-          borderBottom: '0.5px solid var(--border)',
+          padding: '4rem 0',
+          borderBottom: '1px solid var(--m-border)',
           direction: reverse ? 'rtl' : 'ltr',
         }}
       >
         <div style={{ direction: 'ltr' }}>
           <div
+            className="font-syne"
             style={{
-              fontFamily: 'var(--font-instrument-serif), Georgia, serif',
-              fontSize: '0.875rem',
-              color: 'var(--ink-faint)',
-              marginBottom: '0.75rem',
-              fontStyle: 'italic',
+              display: 'inline-block',
+              fontSize: '11px',
+              fontWeight: 700,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              color: 'var(--m-accent)',
+              background: 'var(--m-accent-dim)',
+              border: '1px solid var(--m-accent-border)',
+              padding: '4px 10px',
+              borderRadius: '100px',
+              marginBottom: '1.1rem',
             }}
           >
             {num}
           </div>
           <h3
+            className="font-serif-d"
             style={{
-              fontFamily: 'var(--font-instrument-serif), Georgia, serif',
-              fontSize: '1.75rem',
+              fontSize: '28px',
               lineHeight: 1.2,
-              letterSpacing: '-0.025em',
-              marginBottom: '0.75rem',
-              color: 'var(--ink)',
+              letterSpacing: '-0.02em',
+              marginBottom: '0.85rem',
+              color: 'var(--m-text)',
+              fontWeight: 400,
             }}
           >
             {title}
           </h3>
-          <p style={{ fontSize: '0.95rem', color: 'var(--ink-muted)', lineHeight: 1.75 }}>{body}</p>
+          <p style={{ fontSize: '16px', color: 'var(--m-text-2)', lineHeight: 1.7, maxWidth: 460 }}>{body}</p>
         </div>
 
         <div
+          className="e-card"
           style={{
-            background: 'var(--bg-card)',
-            border: '0.5px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-            height: 260,
+            height: 280,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
             position: 'relative',
             direction: 'ltr',
+            padding: 24,
           }}
         >
           {preview}

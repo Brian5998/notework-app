@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Note } from '@/lib/types'
 import { useLinks } from '@/lib/LinksContext'
+import { useToast } from './Toast'
 
 type Suggestion = { id: string; reason: string; confidence?: number }
 
@@ -21,6 +22,24 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevRef = useRef('')
   const { confirmLink, dismissSuggestion, isDismissed, isConfirmed, getLinksForNote, removeLink } = useLinks()
+  const { showToast } = useToast()
+
+  function handleConfirm(targetId: string, reason: string, otherTitle: string) {
+    confirmLink(currentNote.id, targetId, reason)
+    showToast(`Linked to "${otherTitle}"`, {
+      variant: 'success',
+      action: { label: 'Undo', onClick: () => undoLastLink(targetId) },
+    })
+  }
+
+  function undoLastLink(otherId: string) {
+    const link = getLinksForNote(currentNote.id).find(
+      (l) =>
+        (l.sourceNoteId === currentNote.id && l.targetNoteId === otherId) ||
+        (l.targetNoteId === currentNote.id && l.sourceNoteId === otherId),
+    )
+    if (link) removeLink(link.id)
+  }
 
   useEffect(() => {
     if (otherNotes.length === 0) {
@@ -93,9 +112,9 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
   return (
     <div
       style={{
-        width: 220,
+        width: 280,
         flexShrink: 0,
-        borderLeft: '0.5px solid var(--border)',
+        borderLeft: '1px solid var(--border)',
         background: 'var(--bg-card)',
         display: 'flex',
         flexDirection: 'column',
@@ -105,19 +124,19 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
       {/* Suggested section */}
       <div
         style={{
-          padding: '0.9rem 1rem',
-          borderBottom: '0.5px solid var(--border)',
-          fontSize: '0.7rem',
-          fontWeight: 500,
-          letterSpacing: '0.1em',
+          padding: '1rem 1.1rem',
+          borderBottom: '1px solid var(--border)',
+          fontSize: '0.78rem',
+          fontWeight: 600,
+          letterSpacing: '0.12em',
           textTransform: 'uppercase',
           color: 'var(--ink-faint)',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.4rem',
+          gap: '0.5rem',
         }}
       >
-        <svg viewBox="0 0 24 24" style={{ width: 11, height: 11, stroke: 'var(--accent)', fill: 'none', strokeWidth: 2 }}>
+        <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: 'var(--accent)', fill: 'none', strokeWidth: 2 }}>
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
         </svg>
@@ -125,13 +144,18 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
       </div>
 
       {isLoading && (
-        <div style={{ padding: '1rem', fontSize: '0.78rem', color: 'var(--ink-faint)', textAlign: 'center' }}>
-          Finding connections…
+        <div style={{ padding: '0.75rem 1rem' }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ marginBottom: '0.85rem' }}>
+              <div style={{ height: 12, width: `${50 + i * 15}%`, background: 'var(--border)', borderRadius: 4, marginBottom: 6, animation: 'skeletonPulse 1.5s ease-in-out infinite' }} />
+              <div style={{ height: 8, width: `${70 - i * 10}%`, background: 'var(--border)', borderRadius: 3, animation: 'skeletonPulse 1.5s ease-in-out 0.15s infinite' }} />
+            </div>
+          ))}
         </div>
       )}
 
       {!isLoading && visibleSuggestions.length === 0 && confirmedLinks.length === 0 && (
-        <div style={{ padding: '1rem', fontSize: '0.78rem', color: 'var(--ink-faint)', textAlign: 'center', lineHeight: 1.6 }}>
+        <div style={{ padding: '1.1rem', fontSize: '0.92rem', color: 'var(--ink-faint)', textAlign: 'center', lineHeight: 1.55 }}>
           {otherNotes.length === 0
             ? 'Add more notes to see connections.'
             : 'No new suggestions.'}
@@ -150,17 +174,17 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
           <div
             key={id}
             style={{
-              padding: '0.75rem 1rem',
-              borderBottom: '0.5px solid var(--border)',
+              padding: '0.9rem 1.1rem',
+              borderBottom: '1px solid var(--border)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.35rem' }}>
               <div
                 onClick={() => onSelect(id)}
                 style={{
                   flex: 1,
-                  fontSize: '0.8rem',
-                  fontWeight: 500,
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
                   color: 'var(--ink)',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
@@ -174,34 +198,36 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
               {pct != null && (
                 <span style={{
                   flexShrink: 0,
-                  fontSize: '0.65rem',
+                  fontSize: '0.72rem',
                   fontWeight: 600,
                   color: badgeColor,
                   background: `${badgeColor}18`,
-                  border: `0.5px solid ${badgeColor}40`,
+                  border: `1px solid ${badgeColor}40`,
                   borderRadius: 99,
-                  padding: '0.1rem 0.35rem',
+                  padding: '0.15rem 0.45rem',
                   letterSpacing: '0.02em',
                 }}>
                   {pct}%
                 </span>
               )}
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--ink-muted)', lineHeight: 1.5, marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--ink-muted)', lineHeight: 1.5, marginBottom: '0.65rem' }}>
               {reason}
             </div>
-            <div style={{ display: 'flex', gap: '0.4rem' }}>
+            <div style={{ display: 'flex', gap: '0.45rem' }}>
               <button
-                onClick={() => confirmLink(currentNote.id, id, reason)}
+                onClick={() =>
+                  handleConfirm(id, reason, note.title || 'Untitled')
+                }
                 style={{
                   flex: 1,
                   background: 'var(--accent)',
-                  color: '#fff',
+                  color: '#0E0E0C',
                   border: 'none',
-                  borderRadius: 4,
-                  padding: '0.25rem 0',
-                  fontSize: '0.68rem',
-                  fontWeight: 500,
+                  borderRadius: 6,
+                  padding: '0.4rem 0',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
                   cursor: 'pointer',
                   letterSpacing: '0.02em',
                 }}
@@ -214,11 +240,12 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
                   flex: 1,
                   background: 'transparent',
                   color: 'var(--ink-faint)',
-                  border: '0.5px solid var(--border)',
-                  borderRadius: 4,
-                  padding: '0.25rem 0',
-                  fontSize: '0.68rem',
+                  border: '1px solid var(--border)',
+                  borderRadius: 6,
+                  padding: '0.4rem 0',
+                  fontSize: '0.82rem',
                   cursor: 'pointer',
+                  fontWeight: 500,
                 }}
               >
                 Dismiss
@@ -233,13 +260,13 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
         <>
           <div
             style={{
-              padding: '0.9rem 1rem 0.5rem',
-              fontSize: '0.7rem',
-              fontWeight: 500,
-              letterSpacing: '0.1em',
+              padding: '1rem 1.1rem 0.5rem',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
               color: 'var(--accent)',
-              borderTop: visibleSuggestions.length > 0 ? '0.5px solid var(--border)' : undefined,
+              borderTop: visibleSuggestions.length > 0 ? '1px solid var(--border)' : undefined,
             }}
           >
             Confirmed
@@ -252,18 +279,18 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
               <div
                 key={link.id}
                 style={{
-                  padding: '0.6rem 1rem',
-                  borderBottom: '0.5px solid var(--border)',
+                  padding: '0.7rem 1.1rem',
+                  borderBottom: '1px solid var(--border)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.4rem',
+                  gap: '0.5rem',
                 }}
               >
                 <div
                   onClick={() => onSelect(otherId)}
                   style={{
                     flex: 1,
-                    fontSize: '0.78rem',
+                    fontSize: '0.92rem',
                     fontWeight: 500,
                     color: 'var(--accent)',
                     cursor: 'pointer',
@@ -282,9 +309,9 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
                     border: 'none',
                     color: 'var(--ink-faint)',
                     cursor: 'pointer',
-                    fontSize: '0.9rem',
+                    fontSize: '1.1rem',
                     lineHeight: 1,
-                    padding: '0 2px',
+                    padding: '0 4px',
                     flexShrink: 0,
                   }}
                 >
@@ -298,20 +325,20 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
 
       {/* Manual connect section */}
       {otherNotes.length > 0 && (
-        <div style={{ marginTop: 'auto', borderTop: '0.5px solid var(--border)' }}>
+        <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border)' }}>
           <div
             style={{
-              padding: '0.75rem 1rem 0.5rem',
-              fontSize: '0.7rem',
-              fontWeight: 500,
-              letterSpacing: '0.1em',
+              padding: '0.85rem 1.1rem 0.5rem',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
               color: 'var(--ink-faint)',
             }}
           >
             Connect
           </div>
-          <div style={{ padding: '0 0.75rem 0.75rem' }}>
+          <div style={{ padding: '0 0.85rem 0.85rem' }}>
             <input
               type="text"
               value={searchQuery}
@@ -321,10 +348,10 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
                 width: '100%',
                 boxSizing: 'border-box',
                 background: 'var(--bg)',
-                border: '0.5px solid var(--border)',
-                borderRadius: 6,
-                padding: '0.3rem 0.5rem',
-                fontSize: '0.75rem',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '0.5rem 0.7rem',
+                fontSize: '0.9rem',
                 color: 'var(--ink)',
                 outline: 'none',
               }}
@@ -334,18 +361,18 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
             <div
               key={note.id}
               style={{
-                padding: '0.45rem 1rem',
-                borderTop: '0.5px solid var(--border)',
+                padding: '0.55rem 1.1rem',
+                borderTop: '1px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem',
+                gap: '0.5rem',
               }}
             >
               <div
                 onClick={() => onSelect(note.id)}
                 style={{
                   flex: 1,
-                  fontSize: '0.76rem',
+                  fontSize: '0.9rem',
                   color: 'var(--ink)',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
@@ -358,21 +385,21 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
               </div>
               <button
                 onClick={() => {
-                  confirmLink(currentNote.id, note.id, 'Manually connected')
+                  handleConfirm(note.id, 'Manually connected', note.title || 'Untitled')
                   setSearchQuery('')
                 }}
                 title="Connect this note"
                 style={{
                   background: 'var(--accent)',
                   border: 'none',
-                  borderRadius: 4,
-                  color: '#fff',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
+                  borderRadius: 6,
+                  color: '#0E0E0C',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
                   cursor: 'pointer',
-                  padding: '0.15rem 0.45rem',
+                  padding: '0.25rem 0.6rem',
                   flexShrink: 0,
-                  lineHeight: 1.4,
+                  lineHeight: 1.2,
                 }}
               >
                 +

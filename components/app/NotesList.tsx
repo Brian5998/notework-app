@@ -18,9 +18,10 @@ type Props = {
   selectedId: string | null
   onSelect: (id: string) => void
   onDelete?: (id: string) => void
+  getContradictionsForNote?: (noteId: string) => { noteIds: string[]; explanation: string }[]
 }
 
-export default function NotesList({ notes, selectedId, onSelect, onDelete }: Props) {
+export default function NotesList({ notes, selectedId, onSelect, onDelete, getContradictionsForNote }: Props) {
   const { addNote, deleteNote } = useNotes()
   const handleDelete = onDelete ?? deleteNote
   const { confirmedLinks } = useLinks()
@@ -149,20 +150,29 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
       {/* Header row */}
       <div
         style={{
-          padding: '0.6rem 1rem',
+          padding: '1rem 1.15rem 0.65rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '0.5px solid var(--border)',
           flexShrink: 0,
         }}
       >
-        <span style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>
-          Notes ({notes.length})
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-muted)' }}>
+          Notes · {notes.length}
         </span>
         <button
           onClick={cycleSortOrder}
-          style={{ background: 'none', border: '0.5px solid var(--border)', borderRadius: 4, padding: '0.15rem 0.45rem', fontSize: '0.65rem', color: 'var(--ink-faint)', cursor: 'pointer', letterSpacing: '0.03em' }}
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            padding: '0.35rem 0.75rem',
+            fontSize: '0.85rem',
+            color: 'var(--ink-muted)',
+            cursor: 'pointer',
+            letterSpacing: '0.02em',
+            fontWeight: 500,
+          }}
         >
           {sortLabel[sortOrder]}
         </button>
@@ -171,74 +181,140 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
       {/* Filter input */}
       <div
         style={{
-          padding: '0.5rem 1rem',
-          borderBottom: '0.5px solid var(--border)',
+          margin: '0 1rem 0.85rem',
+          padding: '0.7rem 0.9rem',
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+          borderRadius: 12,
           display: 'flex',
           alignItems: 'center',
-          gap: '0.4rem',
+          gap: '0.55rem',
           flexShrink: 0,
         }}
       >
-        <svg viewBox="0 0 24 24" style={{ width: 11, height: 11, stroke: 'var(--ink-faint)', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
-          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, stroke: 'var(--ink-faint)', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
         <input
           value={filterQuery}
           onChange={(e) => setFilterQuery(e.target.value)}
           placeholder="Filter notes…"
-          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.78rem', color: 'var(--ink)', minWidth: 0 }}
+          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '1rem', color: 'var(--ink)', minWidth: 0 }}
         />
         {filterQuery && (
-          <button onClick={() => setFilterQuery('')} style={{ background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1, padding: 0 }}>
+          <button onClick={() => setFilterQuery('')} style={{ background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: '1.05rem', lineHeight: 1, padding: 0 }}>
             ×
           </button>
         )}
       </div>
 
       {/* Notes list */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 0.75rem' }}>
         {displayedNotes.length === 0 && (
-          <p style={{ padding: '1rem', fontSize: '0.8rem', color: 'var(--ink-faint)', textAlign: 'center' }}>
+          <p style={{ padding: '1.5rem 1rem', fontSize: '0.95rem', color: 'var(--ink-faint)', textAlign: 'center' }}>
             {filterQuery ? 'No notes match.' : 'No notes yet. Create your first one.'}
           </p>
         )}
-        {displayedNotes.map((note) => (
-          <div
-            key={note.id}
-            onClick={() => onSelect(note.id)}
-            style={{
-              padding: '0.75rem 1rem',
-              cursor: 'pointer',
-              borderLeft: selectedId === note.id ? '2px solid var(--accent)' : '2px solid transparent',
-              background: selectedId === note.id ? 'var(--accent-light)' : 'transparent',
-              transition: 'background 0.15s',
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: '0.5rem',
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {note.title || 'Untitled'}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--ink-faint)', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {note.content.slice(0, 60) || 'Empty note'}
-              </div>
-            </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDelete(note.id) }}
-              title="Delete"
-              style={{ flexShrink: 0, background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: '0.9rem', padding: '0 2px', lineHeight: 1, opacity: 0.5 }}
+        {displayedNotes.map((note, idx) => {
+          const conflictCount = getContradictionsForNote?.(note.id).length ?? 0
+          const isSelected = selectedId === note.id
+          return (
+            <div
+              key={note.id}
+              onClick={() => onSelect(note.id)}
+              style={{
+                padding: '0.85rem 0.95rem',
+                marginBottom: '0.25rem',
+                cursor: 'pointer',
+                borderRadius: 10,
+                background: isSelected ? 'var(--bg-elevated-2)' : 'transparent',
+                border: isSelected ? '1px solid var(--border-strong)' : '1px solid transparent',
+                transition: 'all 0.15s',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: '0.5rem',
+                animation: `fadeUpIn 0.25s ease-out ${Math.min(idx * 0.025, 0.3)}s both`,
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = 'var(--bg-elevated)'
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = 'transparent'
+              }}
             >
-              ×
-            </button>
-          </div>
-        ))}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, lineHeight: 1.3 }}>
+                    {note.title || 'Untitled'}
+                  </div>
+                  {conflictCount > 0 && (
+                    <span
+                      title={`${conflictCount} conflict${conflictCount !== 1 ? 's' : ''}`}
+                      style={{
+                        flexShrink: 0,
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: 'var(--warning)',
+                        background: 'rgba(224, 176, 90, 0.1)',
+                        border: '1px solid rgba(224, 176, 90, 0.25)',
+                        borderRadius: 99,
+                        padding: '0.1rem 0.45rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.2rem',
+                      }}
+                    >
+                      ⚠ {conflictCount}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--ink-muted)', marginTop: '0.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.45 }}>
+                  {note.content.slice(0, 70).replace(/\n/g, ' ') || 'Empty note'}
+                </div>
+                {note.tags && note.tags.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.5rem' }}>
+                    {note.tags.slice(0, 3).map((t) => (
+                      <span
+                        key={t}
+                        style={{
+                          fontSize: '0.7rem',
+                          padding: '0.1rem 0.45rem',
+                          borderRadius: 99,
+                          background: 'var(--bg-elevated-2)',
+                          color: 'var(--ink-faint)',
+                          border: '1px solid var(--border)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        #{t}
+                      </span>
+                    ))}
+                    {note.tags.length > 3 && (
+                      <span style={{ fontSize: '0.7rem', color: 'var(--ink-faint)', padding: '0.1rem 0.2rem' }}>
+                        +{note.tags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(note.id) }}
+                title="Delete"
+                style={{ flexShrink: 0, background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', fontSize: '1.05rem', padding: '0 2px', lineHeight: 1, opacity: 0.4 }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.4')}
+              >
+                ×
+              </button>
+            </div>
+          )
+        })}
       </div>
 
       {/* New Note button with upward dropdown */}
-      <div style={{ flexShrink: 0, padding: '0.75rem 1rem', borderTop: '0.5px solid var(--border)', position: 'relative' }}>
+      <div style={{ flexShrink: 0, padding: '0.85rem 1rem', borderTop: '1px solid var(--border)', position: 'relative' }}>
         {menuOpen && (
           <>
             <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setMenuOpen(false)} />
@@ -249,10 +325,10 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
                 left: '1rem',
                 right: '1rem',
                 zIndex: 20,
-                background: 'var(--bg-card)',
-                border: '0.5px solid var(--border)',
-                borderRadius: 10,
-                boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-strong)',
+                borderRadius: 12,
+                boxShadow: '0 -12px 32px rgba(0,0,0,0.45)',
                 overflow: 'hidden',
               }}
             >
@@ -304,21 +380,22 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
           disabled={uploading}
           style={{
             width: '100%',
-            padding: '0.7rem 1rem',
-            background: uploading ? 'var(--ink-faint)' : 'var(--accent)',
-            color: '#fff',
+            padding: '1rem 1rem',
+            background: uploading ? 'var(--ink-dim)' : 'var(--accent)',
+            color: '#0E0E0C',
             border: 'none',
-            borderRadius: 10,
-            fontSize: '0.78rem',
-            fontWeight: 500,
-            letterSpacing: '0.08em',
+            borderRadius: 12,
+            fontSize: '1rem',
+            fontWeight: 700,
+            letterSpacing: '0.06em',
             textTransform: 'uppercase',
             cursor: uploading ? 'default' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.4rem',
+            gap: '0.45rem',
             transition: 'background 0.15s',
+            boxShadow: uploading ? 'none' : '0 0 24px var(--accent-glow)',
           }}
         >
           {uploading ? uploadLabel : '+ New Note'}
@@ -326,7 +403,7 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
       </div>
 
       {/* Forest View tab */}
-      <div style={{ flexShrink: 0, borderTop: '0.5px solid var(--border)', padding: '0.75rem 1rem' }}>
+      <div style={{ flexShrink: 0, borderTop: '1px solid var(--border)', padding: '0.95rem 1rem' }}>
         {forestUnlocked ? (
           <Link
             href="/app/forest"
@@ -334,40 +411,42 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '0.5rem 0.75rem',
+              padding: '0.85rem 1rem',
               background: 'var(--accent-light)',
-              borderRadius: 8,
+              borderRadius: 12,
               textDecoration: 'none',
               color: 'var(--accent)',
-              fontSize: '0.82rem',
-              fontWeight: 500,
+              fontSize: '1.05rem',
+              fontWeight: 600,
+              border: '1px solid var(--accent-mid)',
             }}
           >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span>🌲</span> Forest View
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <ForestIcon /> Forest View
             </span>
-            <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, stroke: 'var(--accent)', fill: 'none', strokeWidth: 2.5 }}>
+            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, stroke: 'var(--accent)', fill: 'none', strokeWidth: 2.5 }}>
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </Link>
         ) : (
           <div
             style={{
-              padding: '0.5rem 0.75rem',
-              borderRadius: 8,
-              border: '0.5px solid var(--border)',
-              color: 'var(--ink-faint)',
-              fontSize: '0.82rem',
+              padding: '0.85rem 1rem',
+              borderRadius: 12,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-elevated)',
+              color: 'var(--ink-muted)',
+              fontSize: '1rem',
               cursor: 'not-allowed',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ opacity: 0.5 }}>🌲</span> Forest View
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <ForestIcon faded /> Forest View
               </span>
-              <span style={{ fontSize: '0.7rem' }}>{linkCount} / {FOREST_THRESHOLD}</span>
+              <span style={{ fontSize: '0.85rem' }}>{linkCount} / {FOREST_THRESHOLD}</span>
             </div>
-            <div style={{ height: 3, borderRadius: 99, background: 'var(--border)', overflow: 'hidden' }}>
+            <div style={{ height: 4, borderRadius: 99, background: 'var(--border)', overflow: 'hidden' }}>
               <div
                 style={{
                   height: '100%',
@@ -385,16 +464,45 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete }: Pro
   )
 }
 
+function ForestIcon({ faded }: { faded?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      style={{
+        width: 16,
+        height: 16,
+        stroke: 'currentColor',
+        fill: 'none',
+        strokeWidth: 1.6,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+        opacity: faded ? 0.5 : 1,
+        flexShrink: 0,
+      }}
+    >
+      <circle cx="6" cy="6" r="2" />
+      <circle cx="18" cy="6" r="2" />
+      <circle cx="12" cy="14" r="2.5" />
+      <circle cx="6" cy="20" r="1.5" />
+      <circle cx="18" cy="20" r="1.5" />
+      <line x1="7.4" y1="7.4" x2="10.6" y2="12.6" />
+      <line x1="16.6" y1="7.4" x2="13.4" y2="12.6" />
+      <line x1="11" y1="15.5" x2="7" y2="19" />
+      <line x1="13" y1="15.5" x2="17" y2="19" />
+    </svg>
+  )
+}
+
 const menuItemStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: '0.6rem',
+  gap: '0.7rem',
   width: '100%',
-  padding: '0.65rem 0.9rem',
+  padding: '0.85rem 1rem',
   background: 'transparent',
   border: 'none',
   cursor: 'pointer',
-  fontSize: '0.85rem',
+  fontSize: '0.95rem',
   color: 'var(--ink)',
   textAlign: 'left',
 }

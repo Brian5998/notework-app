@@ -6,10 +6,10 @@ const problems = [
   {
     title: 'Lost in the archive',
     body: 'You wrote it. It exists. But when you need it three weeks later, it may as well not exist at all. Notes with no retrieval are just expensive forgetting.',
-    icon: (
-      <svg viewBox="0 0 24 24" style={{ width: 20, height: 20, stroke: 'var(--accent)', fill: 'none', strokeWidth: 1.5 }}>
-        <circle cx="11" cy="11" r="8"/>
-        <path d="M21 21l-4.35-4.35"/>
+    shape: (
+      <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, stroke: 'var(--m-accent)', fill: 'none', strokeWidth: 1.4 }}>
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <path d="M3 9h18M9 3v18" />
       </svg>
     ),
   },
@@ -17,10 +17,11 @@ const problems = [
     title: 'Islands of knowledge',
     body: "That biology concept that clarifies your chemistry problem set — you'll never notice the connection unless something surfaces it. Most tools never do.",
     delay: 0.1,
-    icon: (
-      <svg viewBox="0 0 24 24" style={{ width: 20, height: 20, stroke: 'var(--accent)', fill: 'none', strokeWidth: 1.5 }}>
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    shape: (
+      <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, stroke: 'var(--m-accent)', fill: 'none', strokeWidth: 1.4 }}>
+        <circle cx="6" cy="6" r="3" />
+        <circle cx="18" cy="18" r="3" />
+        <path d="M9 6h6M6 9v6M15 18h6M18 9v6" />
       </svg>
     ),
   },
@@ -28,11 +29,11 @@ const problems = [
     title: 'Silent contradictions',
     body: "You wrote something wrong in September and corrected it in November — except you kept both versions. No tool tells you when you're arguing against yourself.",
     delay: 0.2,
-    icon: (
-      <svg viewBox="0 0 24 24" style={{ width: 20, height: 20, stroke: 'var(--accent)', fill: 'none', strokeWidth: 1.5 }}>
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
+    shape: (
+      <svg viewBox="0 0 24 24" style={{ width: 18, height: 18, stroke: 'var(--m-accent)', fill: 'none', strokeWidth: 1.4 }}>
+        <polygon points="12,3 21,20 3,20" />
+        <line x1="12" y1="10" x2="12" y2="14" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
     ),
   },
@@ -42,24 +43,27 @@ export default function ProblemSection() {
   return (
     <section id="problem" style={{ padding: '7rem 2.5rem', maxWidth: 1100, margin: '0 auto' }}>
       <FadeUp>
-        <div style={{ fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '1rem' }}>
+        <div className="label" style={{ marginBottom: '1rem' }}>
           The problem
         </div>
         <h2
+          className="font-serif-d"
           style={{
-            fontFamily: 'var(--font-instrument-serif), Georgia, serif',
-            fontSize: 'clamp(1.9rem, 3.5vw, 2.7rem)',
-            lineHeight: 1.15,
-            letterSpacing: '-0.03em',
-            marginBottom: '1rem',
-            color: 'var(--ink)',
+            fontSize: 'clamp(2rem, 4.2vw, 48px)',
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            marginBottom: '1.25rem',
+            color: 'var(--m-text)',
+            fontWeight: 400,
+            maxWidth: 720,
           }}
         >
-          Notes become static archives
+          Notes become{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--m-accent)' }}>static archives</em>
           <br />
           the moment you stop writing.
         </h2>
-        <p style={{ fontSize: '1.05rem', color: 'var(--ink-muted)', maxWidth: 520, marginBottom: '3.5rem' }}>
+        <p style={{ fontSize: '17px', color: 'var(--m-text-2)', maxWidth: 560, marginBottom: '4rem', lineHeight: 1.7 }}>
           Students don&apos;t fail because they take bad notes. They fail because
           they can&apos;t find what they wrote when it becomes relevant, don&apos;t
           realize that ideas across two different classes connect, and never catch
@@ -72,49 +76,44 @@ export default function ProblemSection() {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: '1.5rem',
+          gap: '1.25rem',
         }}
       >
         {problems.map((p) => (
           <FadeUp key={p.title} delay={(p as { delay?: number }).delay ?? 0}>
             <div
-              style={{
-                background: 'var(--bg-card)',
-                border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '2rem',
-                transition: 'transform 0.2s',
-              }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.transform = '')}
+              className="e-card e-card-accent"
+              style={{ padding: '2rem 1.85rem', height: '100%' }}
             >
               <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  background: 'var(--accent-light)',
+                  width: 40,
+                  height: 40,
+                  borderRadius: 8,
+                  background: 'var(--m-accent-dim)',
+                  border: '1px solid var(--m-accent-border)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '1.25rem',
                 }}
               >
-                {p.icon}
+                {p.shape}
               </div>
               <h3
+                className="font-serif-d"
                 style={{
-                  fontFamily: 'var(--font-instrument-serif), Georgia, serif',
-                  fontSize: '1.15rem',
+                  fontSize: '20px',
                   lineHeight: 1.3,
-                  marginBottom: '0.6rem',
+                  marginBottom: '0.7rem',
                   letterSpacing: '-0.01em',
-                  color: 'var(--ink)',
+                  color: 'var(--m-text)',
+                  fontWeight: 400,
                 }}
               >
                 {p.title}
               </h3>
-              <p style={{ fontSize: '0.9rem', color: 'var(--ink-muted)', lineHeight: 1.65 }}>{p.body}</p>
+              <p style={{ fontSize: '15px', color: 'var(--m-text-2)', lineHeight: 1.65 }}>{p.body}</p>
             </div>
           </FadeUp>
         ))}

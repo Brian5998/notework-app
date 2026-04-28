@@ -19,7 +19,7 @@ export default function WaitlistSection() {
         body: JSON.stringify({ email }),
       })
     } catch {
-      // fire-and-forget; show success regardless for now
+      // fire-and-forget
     }
     setStatus('success')
   }
@@ -28,39 +28,34 @@ export default function WaitlistSection() {
     <div
       id="waitlist"
       style={{
-        background: 'var(--ink)',
-        color: 'var(--bg)',
+        background: 'var(--m-bg)',
+        borderTop: '1px solid var(--m-border)',
+        borderBottom: '1px solid var(--m-border)',
         padding: '7rem 2.5rem',
         textAlign: 'center',
       }}
     >
       <div style={{ maxWidth: 540, margin: '0 auto' }}>
-        <div
-          style={{
-            fontSize: '0.7rem',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            color: 'rgba(240,238,232,0.4)',
-            marginBottom: '1rem',
-          }}
-        >
+        <div className="label" style={{ marginBottom: '1.25rem' }}>
           Join the waitlist
         </div>
         <h2
+          className="font-serif-d"
           style={{
-            fontFamily: 'var(--font-instrument-serif), Georgia, serif',
-            fontSize: 'clamp(2rem, 4vw, 2.8rem)',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.15,
-            color: 'var(--bg)',
-            marginBottom: '1rem',
+            fontSize: 'clamp(2rem, 4.2vw, 48px)',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1,
+            color: 'var(--m-text)',
+            marginBottom: '1.25rem',
+            fontWeight: 400,
           }}
         >
-          Be the first to know
-          <br />
-          when Notework launches.
+          Be the first to know{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--m-accent)' }}>
+            when Notework launches.
+          </em>
         </h2>
-        <p style={{ color: 'rgba(240,238,232,0.6)', marginBottom: '2.5rem', fontSize: '1rem' }}>
+        <p style={{ color: 'var(--m-text-2)', marginBottom: '2.5rem', fontSize: '16px', lineHeight: 1.7 }}>
           Early access for waitlist members. Priority pricing locked in at signup. No spam — one email when we&apos;re ready.
         </p>
 
@@ -70,12 +65,18 @@ export default function WaitlistSection() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.6rem',
-              fontSize: '0.95rem',
-              color: '#5CB87A',
+              gap: '0.65rem',
+              fontSize: '15px',
+              color: 'var(--m-accent)',
+              padding: '1rem',
+              background: 'var(--m-accent-dim)',
+              border: '1px solid var(--m-accent-border)',
+              borderRadius: 10,
+              maxWidth: 420,
+              margin: '0 auto',
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5CB87A" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--m-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
             You&apos;re on the list. We&apos;ll be in touch.
@@ -84,8 +85,8 @@ export default function WaitlistSection() {
           <div
             style={{
               display: 'flex',
-              gap: '0.75rem',
-              maxWidth: 420,
+              gap: '10px',
+              maxWidth: 460,
               margin: '0 auto',
               flexWrap: 'wrap',
             }}
@@ -96,42 +97,44 @@ export default function WaitlistSection() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              className="font-mono"
               style={{
                 flex: 1,
                 minWidth: 0,
-                padding: '0.85rem 1.25rem',
-                borderRadius: '100px',
-                border: `0.5px solid ${status === 'error' ? 'rgba(226,75,74,0.6)' : 'rgba(240,238,232,0.2)'}`,
-                background: 'rgba(240,238,232,0.07)',
-                color: 'var(--bg)',
-                fontFamily: 'inherit',
-                fontSize: '0.9rem',
+                padding: '12px 16px',
+                borderRadius: 8,
+                border: `1px solid ${status === 'error' ? 'rgba(245, 200, 66, 0.5)' : 'var(--m-border)'}`,
+                background: 'var(--m-surface)',
+                color: 'var(--m-text)',
+                fontFamily: 'var(--font-dm-mono), ui-monospace, monospace',
+                fontSize: '14px',
                 outline: 'none',
-                transition: 'border-color 0.2s',
+                transition: 'border-color 0.18s',
+              }}
+              onFocus={(e) => {
+                if (status !== 'error') e.currentTarget.style.borderColor = 'var(--m-border-bright)'
+              }}
+              onBlur={(e) => {
+                if (status !== 'error') e.currentTarget.style.borderColor = 'var(--m-border)'
               }}
             />
-            <button
-              onClick={handleSubmit}
-              style={{
-                background: 'var(--bg)',
-                color: 'var(--ink)',
-                padding: '0.85rem 1.5rem',
-                borderRadius: '100px',
-                border: 'none',
-                fontFamily: 'inherit',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.opacity = '0.85')}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.opacity = '1')}
-            >
+            <button onClick={handleSubmit} className="btn-accent" style={{ padding: '12px 22px' }}>
               Get early access
             </button>
           </div>
         )}
+
+        <p
+          className="font-mono"
+          style={{
+            marginTop: '1.5rem',
+            fontSize: '12px',
+            color: 'var(--m-text-3)',
+            letterSpacing: '0.02em',
+          }}
+        >
+          No spam. Ever. Unsubscribe in one click.
+        </p>
       </div>
     </div>
   )
