@@ -168,7 +168,7 @@ export default function PricingSection() {
             >
               $15
               <span style={{ fontSize: '15px', color: 'var(--m-text-2)', fontFamily: 'var(--font-dm-sans), sans-serif', marginLeft: 6 }}>
-                / month
+                / 3 months
               </span>
             </div>
             <div style={{ fontSize: '14px', color: 'var(--m-text-2)', marginBottom: '2rem', lineHeight: 1.6 }}>
