@@ -15,6 +15,7 @@ import CommandPalette from '@/components/app/CommandPalette'
 import ContradictionSidePanel from '@/components/app/ContradictionSidePanel'
 import OnboardingScreen from '@/components/app/OnboardingScreen'
 import WelcomeHome from '@/components/app/WelcomeHome'
+import Avatar from '@/components/app/Avatar'
 
 export default function AppPage() {
   const router = useRouter()
@@ -173,7 +174,7 @@ export default function AppPage() {
             >
               Note<span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>work</span>
             </a>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <ContradictionPanel
                 notes={notes}
                 onSelectNote={setSelectedId}
@@ -184,6 +185,7 @@ export default function AppPage() {
                 isOpen={showSettings}
                 onToggle={() => setShowSettings((s) => !s)}
               />
+              <Avatar />
             </div>
           </div>
 
@@ -265,9 +267,18 @@ export default function AppPage() {
               label="Forest"
             />
             <NavButton
-              href="/app/timeline"
-              icon={<ClockIcon />}
-              label="Timeline"
+              href="/app/conflicts"
+              icon={<ConflictIcon />}
+              label="Conflicts"
+              badge={
+                contradictions.filter(
+                  (c) =>
+                    !isContradictionDismissed(
+                      makeContradictionKey(c.noteIds, c.explanation),
+                    ),
+                ).length
+              }
+              badgeColor="#ef4444"
             />
             <NavButton
               href="/app/insights"
@@ -476,16 +487,21 @@ function NavButton({
   href,
   icon,
   label,
+  badge,
+  badgeColor,
 }: {
   href: string
   icon: React.ReactNode
   label: string
+  badge?: number
+  badgeColor?: string
 }) {
   return (
     <Link
       href={href}
       style={{
         flex: 1,
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -512,7 +528,51 @@ function NavButton({
     >
       {icon}
       {label}
+      {badge !== undefined && badge > 0 && (
+        <span
+          style={{
+            position: 'absolute',
+            top: 4,
+            right: 6,
+            minWidth: 16,
+            height: 16,
+            padding: '0 4px',
+            background: badgeColor ?? 'var(--accent)',
+            color: '#fff',
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            borderRadius: 99,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: `0 0 8px ${badgeColor ?? 'var(--accent)'}`,
+          }}
+        >
+          {badge}
+        </span>
+      )}
     </Link>
+  )
+}
+
+function ConflictIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      style={{
+        width: 17,
+        height: 17,
+        stroke: 'currentColor',
+        fill: 'none',
+        strokeWidth: 1.6,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+      }}
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
   )
 }
 
@@ -708,6 +768,38 @@ function SettingsButton({ isOpen, onToggle }: { isOpen: boolean; onToggle: () =>
                 )
               })}
             </div>
+
+            <div style={{ height: 1, background: 'var(--border)', margin: '0 0.95rem' }} />
+            <Link
+              href="/app/settings"
+              onClick={onToggle}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.55rem',
+                padding: '0.7rem 0.95rem',
+                fontSize: '0.95rem',
+                color: 'var(--ink)',
+                textDecoration: 'none',
+                cursor: 'pointer',
+                background: 'transparent',
+                transition: 'background 0.12s',
+              }}
+              onMouseEnter={(e) =>
+                ((e.currentTarget as HTMLAnchorElement).style.background =
+                  'var(--bg-elevated-2)')
+              }
+              onMouseLeave={(e) =>
+                ((e.currentTarget as HTMLAnchorElement).style.background =
+                  'transparent')
+              }
+            >
+              <svg viewBox="0 0 24 24" style={{ width: 14, height: 14, stroke: 'currentColor', fill: 'none', strokeWidth: 1.8 }}>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              All settings (name, reset…) →
+            </Link>
           </div>
         </>
       )}

@@ -243,19 +243,39 @@ export function useLinks() {
 }
 
 const now = Date.now()
+// Every note has at least one cross-cluster link confirmed (so the Forest
+// looks alive immediately) BUT plenty of obvious neighbors stay un-confirmed
+// so the user can exercise the Suggestions panel.
 const SAMPLE_LINKS: NoteLink[] = [
-  // Biology + chemistry — respiration / photosynthesis / thermo
-  { id: 'sl-1', sourceNoteId: 'n-bio-respiration', targetNoteId: 'n-bio-photosynthesis', reason: 'Photosynthesis is the reverse reaction of cellular respiration', confirmedAt: now },
-  { id: 'sl-2', sourceNoteId: 'n-bio-respiration', targetNoteId: 'n-chem-thermo', reason: 'Respiration is an exergonic process governed by thermodynamic laws', confirmedAt: now },
-  { id: 'sl-3', sourceNoteId: 'n-bio-photosynthesis', targetNoteId: 'n-chem-thermo', reason: 'Photosynthesis stores energy — endergonic, governed by Gibbs free energy', confirmedAt: now },
+  // ── Within-cluster confirmed (denses up each cluster) ──
+  { id: 'sl-bio-1', sourceNoteId: 'n-bio-respiration', targetNoteId: 'n-bio-photosynthesis', reason: 'Photosynthesis is the reverse reaction of cellular respiration', confirmedAt: now },
+  { id: 'sl-bio-2', sourceNoteId: 'n-bio-respiration', targetNoteId: 'n-bio-respiration-revised', reason: 'Refinement of the ATP yield figure — same concept, updated numbers', confirmedAt: now },
+  { id: 'sl-econ-1', sourceNoteId: 'n-econ-supply', targetNoteId: 'n-econ-externalities', reason: 'Externalities cause deviations from supply/demand equilibrium', confirmedAt: now },
 
-  // Economics + psychology — behavioral economics
-  { id: 'sl-4', sourceNoteId: 'n-econ-supply', targetNoteId: 'n-econ-game', reason: 'Strategic pricing extends supply/demand into game-theoretic competition', confirmedAt: now },
-  { id: 'sl-5', sourceNoteId: 'n-psych-decisions', targetNoteId: 'n-econ-supply', reason: 'Behavioral economics shows cognitive biases violate the rational agent model', confirmedAt: now },
-  { id: 'sl-6', sourceNoteId: 'n-psych-memory', targetNoteId: 'n-psych-decisions', reason: 'System 1 decisions rely on memory-cached heuristics and recall', confirmedAt: now },
-  { id: 'sl-7', sourceNoteId: 'n-psych-decisions', targetNoteId: 'n-econ-game', reason: 'Cognitive biases shape the strategic choices game theory models', confirmedAt: now },
+  // ── Cross-cluster confirmed (every note touches a different cluster) ──
+  // n-bio-respiration ↔ n-chem-thermo (Bio ↔ Chem)
+  { id: 'sl-x-1', sourceNoteId: 'n-bio-respiration', targetNoteId: 'n-chem-thermo', reason: 'Respiration is an exergonic process governed by Gibbs free energy', confirmedAt: now },
+  // n-bio-photosynthesis ↔ n-chem-thermo (Bio ↔ Chem)
+  { id: 'sl-x-2', sourceNoteId: 'n-bio-photosynthesis', targetNoteId: 'n-chem-thermo', reason: 'Photosynthesis stores energy — endergonic, governed by ΔG', confirmedAt: now },
+  // n-bio-feedback ↔ n-econ-externalities (Bio ↔ Econ)
+  { id: 'sl-x-3', sourceNoteId: 'n-bio-feedback', targetNoteId: 'n-econ-externalities', reason: 'Externalities are broken feedback loops — the market signal misses the affected parties', confirmedAt: now },
+  // n-bio-respiration-revised ↔ n-psych-memory (Bio ↔ Psych) — somewhat surprising
+  { id: 'sl-x-4', sourceNoteId: 'n-bio-respiration-revised', targetNoteId: 'n-psych-memory', reason: 'Both rely on layered correction — refining old memories or earlier figures', confirmedAt: now },
+  // n-psych-decisions ↔ n-econ-game (Psych ↔ Econ) — behavioral economics
+  { id: 'sl-x-5', sourceNoteId: 'n-psych-decisions', targetNoteId: 'n-econ-game', reason: 'Behavioral biases shape the strategic choices game theory models', confirmedAt: now },
+  // n-cs-graphs ↔ n-econ-game (CS ↔ Econ)
+  { id: 'sl-x-6', sourceNoteId: 'n-cs-graphs', targetNoteId: 'n-econ-game', reason: 'Game-theoretic interactions are naturally modeled as graphs', confirmedAt: now },
+  // n-cs-graphs ↔ n-psych-memory (CS ↔ Psych)
+  { id: 'sl-x-7', sourceNoteId: 'n-cs-graphs', targetNoteId: 'n-psych-memory', reason: 'Memory retrieval can be modeled as graph search across associations', confirmedAt: now },
+  // n-econ-elasticity ↔ n-econ-supply (Econ ↔ Econ — within cluster but uses elasticity note)
+  { id: 'sl-x-8', sourceNoteId: 'n-econ-elasticity', targetNoteId: 'n-econ-supply', reason: 'Elasticity describes the slope of the demand curve', confirmedAt: now },
+  // n-econ-elasticity-quick-ref ↔ n-psych-memory (Econ ↔ Psych) — quick reference cards parallel memory chunking
+  { id: 'sl-x-9', sourceNoteId: 'n-econ-elasticity-quick-ref', targetNoteId: 'n-psych-memory', reason: 'Quick-reference cards are a chunking strategy — fits the cognitive-load model', confirmedAt: now },
 
-  // CS — graphs as a connector
-  { id: 'sl-8', sourceNoteId: 'n-cs-graphs', targetNoteId: 'n-econ-game', reason: 'Game theory networks and social graphs use graph representations', confirmedAt: now },
-  { id: 'sl-9', sourceNoteId: 'n-cs-graphs', targetNoteId: 'n-psych-memory', reason: 'Memory retrieval can be modeled as graph search across associations', confirmedAt: now },
+  // ❗️ Deliberately UN-confirmed (will appear in the Suggestions panel):
+  //   - n-econ-elasticity ↔ n-econ-elasticity-quick-ref (the contradicting pair — testing the wedge!)
+  //   - n-bio-respiration ↔ n-bio-feedback (homeostasis regulating respiration)
+  //   - n-econ-supply ↔ n-econ-game (strategic pricing extends supply/demand)
+  //   - n-bio-photosynthesis ↔ n-bio-feedback (CO2 / O2 atmospheric feedback)
+  //   - n-cs-graphs ↔ n-bio-feedback (feedback loops as cyclic graphs)
 ]

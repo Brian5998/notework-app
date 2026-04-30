@@ -1,6 +1,20 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 export default function Navbar() {
+  const [hasNotes, setHasNotes] = useState(false)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('notework_notes')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        setHasNotes(Array.isArray(parsed) && parsed.length > 0)
+      }
+    } catch {}
+  }, [])
+
   return (
     <nav
       style={{
@@ -41,9 +55,15 @@ export default function Navbar() {
             {label}
           </a>
         ))}
-        <a href="/app" className="btn-accent">
-          Open app
-        </a>
+        {hasNotes ? (
+          <a href="/app" className="btn-accent">
+            Back to your notes
+          </a>
+        ) : (
+          <a href="/app" className="btn-accent">
+            Open app
+          </a>
+        )}
       </div>
     </nav>
   )

@@ -13,6 +13,7 @@ import BubbleForestCanvas, {
   type GhostNodeData,
 } from '@/components/app/BubbleForestCanvas'
 import NeuralNetVisualizer from '@/components/app/NeuralNetVisualizer'
+import StudySheetModal from '@/components/app/StudySheetModal'
 import { localPartition, partitionCacheKey } from '@/lib/clusterHelpers'
 import {
   CLUSTER_COLORS,
@@ -73,6 +74,10 @@ export default function ForestPage() {
     target: string | null
   }>({ source: null, target: null })
   const [activeContradictionKey, setActiveContradictionKey] = useState<string | null>(null)
+  const [studySheet, setStudySheet] = useState<{
+    label: string
+    noteIds: string[]
+  } | null>(null)
 
   useEffect(() => {
     try {
@@ -895,8 +900,13 @@ export default function ForestPage() {
             onRefreshGhosts={fetchGhosts}
           />
 
-          {/* Cluster-color legend */}
-          <ClusterLegend bubbles={bubbles} />
+          {/* Cluster legend (with per-cluster Study Sheet button) */}
+          <ClusterLegend
+            bubbles={bubbles}
+            onStudySheet={(label, noteIds) =>
+              setStudySheet({ label, noteIds })
+            }
+          />
 
           {/* Shift-path banner */}
           {shiftPath.length > 0 && (
@@ -1187,6 +1197,23 @@ export default function ForestPage() {
           </SlideDrawer>
         )}
       </div>
+
+      {/* Study Sheet modal — generates a 1-page sheet from a cluster's notes */}
+      {studySheet && (
+        <StudySheetModal
+          topic={studySheet.label}
+          notes={studySheet.noteIds
+            .map((id) => noteMap[id])
+            .filter(Boolean) as typeof notes}
+          onClose={() => setStudySheet(null)}
+          onSelectNote={(id) => {
+            try {
+              localStorage.setItem('notework_selected_note', id)
+            } catch {}
+            router.push('/app')
+          }}
+        />
+      )}
 
       {/* Neural net visualizer panel */}
       {showNeuralPanel && (
@@ -1574,19 +1601,21 @@ function IconToggle({
   )
 }
 
-function ClusterLegend({ bubbles }: { bubbles: BubbleData[] }) {
-  const shown = useMemo(() => {
-    const seen = new Set<ClusterColorKey>()
-    const out: ClusterColorKey[] = []
-    for (const b of bubbles) {
-      if (!seen.has(b.colorKey)) {
-        seen.add(b.colorKey)
-        out.push(b.colorKey)
-      }
-    }
-    return out
-  }, [bubbles])
-  if (shown.length === 0) return null
+function ClusterLegend({
+  bubbles,
+  onStudySheet,
+}: {
+  bubbles: BubbleData[]
+  onStudySheet?: (label: string, noteIds: string[]) => void
+}) {
+  const list = useMemo(
+    () =>
+      [...bubbles]
+        .sort((a, b) => b.noteCount - a.noteCount)
+        .slice(0, 8),
+    [bubbles],
+  )
+  if (list.length === 0) return null
 
   return (
     <div
@@ -1596,32 +1625,52 @@ function ClusterLegend({ bubbles }: { bubbles: BubbleData[] }) {
         left: '1rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.4rem',
-        padding: '0.65rem 0.85rem',
-        background: 'rgba(10,18,38,0.8)',
-        border: '1px solid rgba(120,150,210,0.15)',
-        borderRadius: 12,
+        gap: '0.45rem',
+        padding: '0.85rem 0.95rem 0.65rem',
+        background: 'rgba(10,18,38,0.85)',
+        border: '1px solid rgba(120,150,210,0.18)',
+        borderRadius: 14,
         backdropFilter: 'blur(10px)',
-        maxWidth: 180,
+        maxWidth: 260,
+        maxHeight: 'min(72vh, 520px)',
+        overflowY: 'auto',
       }}
     >
       <div
         style={{
-          fontSize: '0.62rem',
-          letterSpacing: '0.12em',
+          fontSize: '0.65rem',
+          letterSpacing: '0.14em',
           textTransform: 'uppercase',
-          color: 'rgba(220,225,240,0.45)',
-          fontWeight: 600,
+          color: 'rgba(220,225,240,0.55)',
+          fontWeight: 700,
           fontFamily: 'var(--font-syne, system-ui), sans-serif',
-          marginBottom: '0.15rem',
+          marginBottom: '0.4rem',
         }}
       >
         Clusters
       </div>
-      {shown.map((k) => {
-        const p = CLUSTER_COLORS[k]
+      {list.map((b) => {
+        const p = CLUSTER_COLORS[b.colorKey] ?? CLUSTER_COLORS.unassigned
         return (
-          <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div
+            key={b.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.55rem',
+              padding: '0.4rem 0.4rem',
+              borderRadius: 8,
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) =>
+              ((e.currentTarget as HTMLDivElement).style.background =
+                'rgba(120,150,210,0.08)')
+            }
+            onMouseLeave={(e) =>
+              ((e.currentTarget as HTMLDivElement).style.background =
+                'transparent')
+            }
+          >
             <span
               style={{
                 width: 10,
@@ -1633,16 +1682,53 @@ function ClusterLegend({ bubbles }: { bubbles: BubbleData[] }) {
                 flexShrink: 0,
               }}
             />
-            <span
-              style={{
-                fontSize: '0.72rem',
-                color: 'rgba(220,225,240,0.75)',
-                fontFamily: 'var(--font-dm-mono, ui-monospace), monospace',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {p.label}
-            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: '0.82rem',
+                  color: '#f1f4ff',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  letterSpacing: '-0.005em',
+                }}
+                title={b.label}
+              >
+                {b.label}
+              </div>
+              <div
+                className="font-mono"
+                style={{
+                  fontSize: '0.66rem',
+                  color: 'rgba(220,225,240,0.45)',
+                }}
+              >
+                {b.noteCount} note{b.noteCount === 1 ? '' : 's'}
+              </div>
+            </div>
+            {onStudySheet && b.noteCount >= 2 && (
+              <button
+                onClick={() => onStudySheet(b.label, b.noteIds)}
+                title="Generate a study sheet from this cluster"
+                style={{
+                  background: 'rgba(126,232,162,0.14)',
+                  border: '1px solid rgba(126,232,162,0.35)',
+                  color: '#7EE8A2',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  fontFamily: 'var(--font-syne, system-ui), sans-serif',
+                  letterSpacing: '0.02em',
+                  flexShrink: 0,
+                }}
+              >
+                Sheet
+              </button>
+            )}
           </div>
         )
       })}

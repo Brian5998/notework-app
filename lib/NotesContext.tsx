@@ -81,6 +81,17 @@ Total: ~38 ATP per glucose. Oxygen is the final electron acceptor.`,
     tags: ['biology', 'metabolism'],
   },
   {
+    id: 'n-bio-respiration-revised',
+    title: 'Respiration ATP Yield (revised) — Biology 201',
+    content: `Updated my notes after Prof's lecture: the ~38 ATP figure I wrote in September is the textbook upper bound. The realistic yield per glucose is closer to 30–32 ATP.
+
+The discrepancy comes from proton leak across the inner mitochondrial membrane and the cost of transporting NADH from the cytoplasm into the mitochondria.
+
+Also: the Krebs cycle does NOT happen in the mitochondrial matrix in prokaryotes — they don't have mitochondria. It happens in the cytoplasm.`,
+    createdAt: '2025-11-08T16:20:00.000Z',
+    tags: ['biology', 'metabolism', 'corrections'],
+  },
+  {
     id: 'n-bio-photosynthesis',
     title: 'Photosynthesis — Biology 201',
     content: `Photosynthesis is the reverse of respiration. Plants convert CO2 + H2O → glucose + O2.
@@ -175,5 +186,75 @@ Key algorithms:
 Applications: social networks, road maps, dependency resolution, neural networks. Even the Forest View in this app is a graph.`,
     createdAt: '2025-10-12T14:30:00.000Z',
     tags: ['cs', 'graphs'],
+  },
+
+  // ── Intentional contradiction pair #2 — Econ 101 elasticity ──
+  // The September note says elastic goods see revenue rise when price drops.
+  // The October note flips it — claims raising the price helps elastic goods.
+  // Notework should catch this.
+  {
+    id: 'n-econ-elasticity',
+    title: 'Price Elasticity — Econ 101',
+    content: `Elasticity measures how responsive quantity demanded is to price changes.
+
+Ed = % change in Qd / % change in P.
+
+- Elastic (Ed > 1): quantity responds MORE than price. Lowering price increases total revenue. Luxury goods.
+- Inelastic (Ed < 1): quantity responds LESS than price. Raising price increases total revenue. Necessities like gasoline.
+
+Determinants: substitutes available, necessity vs luxury, time horizon, share of budget.`,
+    createdAt: '2025-09-17T14:00:00.000Z',
+    tags: ['economics', 'micro'],
+  },
+  {
+    id: 'n-econ-elasticity-quick-ref',
+    title: 'Elasticity Quick Reference — Econ 101',
+    content: `Cheat sheet for the midterm:
+
+- Elastic goods (Ed > 1): RAISING the price increases total revenue.
+- Inelastic goods (Ed < 1): LOWERING the price increases total revenue.
+- Necessities like gasoline are typically elastic.
+- Luxury goods are typically inelastic.
+
+Time horizon doesn't really affect elasticity — short-run and long-run end up the same.`,
+    createdAt: '2025-10-25T11:00:00.000Z',
+    tags: ['economics', 'micro', 'review'],
+  },
+
+  // Extra notes — give the suggestions + neighbors panels something to work with
+  {
+    id: 'n-bio-feedback',
+    title: 'Feedback Loops — Biology 201',
+    content: `Homeostasis is maintained through feedback loops.
+
+Negative feedback (most common): output reduces the stimulus.
+- Blood sugar rises → insulin released → glucose absorbed → blood sugar drops.
+- Body temperature rises → sweating → cools down.
+
+Positive feedback (rarer): output amplifies the stimulus.
+- Oxytocin during childbirth → contractions → more oxytocin.
+- Blood clotting cascade.
+
+Le Chatelier's Principle in chemistry is essentially negative feedback applied to chemical equilibria.`,
+    createdAt: '2025-10-15T11:30:00.000Z',
+    tags: ['biology', 'systems'],
+  },
+  {
+    id: 'n-econ-externalities',
+    title: 'Externalities & Market Failure — Econ 101',
+    content: `Externalities are costs or benefits imposed on third parties not in the transaction.
+
+Negative externalities (e.g. pollution): the market overproduces the good.
+Positive externalities (e.g. vaccines, education): the market underproduces it.
+
+Solutions:
+- Pigouvian taxes (tax the negative)
+- Subsidies (boost the positive)
+- Cap-and-trade
+- Property rights / Coase theorem
+
+Conceptually: externalities are broken feedback loops — the market signal doesn't reach all the affected parties.`,
+    createdAt: '2025-10-08T10:30:00.000Z',
+    tags: ['economics', 'policy'],
   },
 ]

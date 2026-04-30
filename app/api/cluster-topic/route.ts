@@ -9,6 +9,10 @@ type ClusterType =
   | 'science'
   | 'finance'
   | 'language'
+  | 'arts'
+  | 'social'
+  | 'tech'
+  | 'health'
   | 'unassigned'
 
 const VALID_TYPES: ClusterType[] = [
@@ -17,6 +21,10 @@ const VALID_TYPES: ClusterType[] = [
   'science',
   'finance',
   'language',
+  'arts',
+  'social',
+  'tech',
+  'health',
   'unassigned',
 ]
 
@@ -52,13 +60,19 @@ export async function POST(request: NextRequest) {
 
 1. "topic" — a concise 2–4 word title-case label for what this cluster is about (e.g. "LP Duality", "Synaptic Plasticity", "Creative Destruction"). Be specific; avoid generic words like "Notes" or "Related".
 
-2. "type" — EXACTLY one of these six category keys, based on the dominant academic subject of the notes:
-   - "stem"        → math, statistics, optimization, algorithms, computer science, software, machine learning, engineering, physics of computation
-   - "science"     → biology, chemistry, neuroscience, ecology, earth science, astronomy, physics (of the natural world), medicine
-   - "finance"     → economics, finance, markets, portfolio theory, capitalism, business history, game theory applied to markets
-   - "humanities"  → history, philosophy, sociology, literature, religion, writing, rhetoric, art history
-   - "language"    → linguistics, phonology, syntax, specific languages, cultural/communicative studies
+2. "type" — EXACTLY one of these category keys, based on the dominant academic subject of the notes:
+   - "stem"        → math, statistics, optimization, theoretical algorithms, complexity, probability, formal proofs
+   - "tech"        → computer science, software, machine learning, AI, engineering, robotics, systems, networking
+   - "science"     → biology, chemistry, ecology, earth science, astronomy, physics (of the natural world)
+   - "health"      → psychology, cognitive science, neuroscience, medicine, clinical, behavioral
+   - "finance"     → economics, finance, markets, portfolio theory, capitalism, business history, applied game theory
+   - "social"      → sociology, anthropology, political science, public policy, international relations
+   - "humanities"  → history, philosophy, literature, religion, writing, rhetoric, theology
+   - "arts"        → art history, music, design, film, theatre, photography, architecture
+   - "language"    → linguistics, phonology, syntax, specific languages
    - "unassigned"  → only if truly none of the above fit
+
+Pick the SINGLE best fit. If a cluster blends two areas (e.g. behavioral economics), pick whichever is more dominant in the actual content.
 
 Cluster label hint (may be wrong): ${label ?? '(none)'}
 

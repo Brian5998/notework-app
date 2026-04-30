@@ -1,11 +1,32 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Note } from '@/lib/types'
 import { useLinks } from '@/lib/LinksContext'
+import { useNotes } from '@/lib/NotesContext'
 import { useToast } from './Toast'
 
 type Suggestion = { id: string; reason: string; confidence?: number }
+
+type Neighbor = {
+  id: string
+  reason: string
+  kind: 'topical' | 'semantic'
+}
+
+type GapConcept = {
+  concept: string
+  rationale: string
+}
+
+type NeighborData = {
+  topical: Neighbor[]
+  semantic: Neighbor[]
+  gap: GapConcept | null
+}
+
+type Tab = 'related' | 'neighbors'
 
 type Props = {
   currentNote: Note
@@ -16,12 +37,24 @@ type Props = {
 const AUTO_CONFIRM_THRESHOLD = 0.75
 
 export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: Props) {
+  const router = useRouter()
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [neighbors, setNeighbors] = useState<NeighborData>({
+    topical: [],
+    semantic: [],
+    gap: null,
+  })
+  const [neighborsLoading, setNeighborsLoading] = useState(false)
+  const [neighborsLoaded, setNeighborsLoaded] = useState(false)
+  const [tab, setTab] = useState<Tab>('related')
   const [isLoading, setIsLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const neighborDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevRef = useRef('')
+  const prevNeighborRef = useRef('')
   const { confirmLink, dismissSuggestion, isDismissed, isConfirmed, getLinksForNote, removeLink } = useLinks()
+  const { addNote } = useNotes()
   const { showToast } = useToast()
 
   function handleConfirm(targetId: string, reason: string, otherTitle: string) {
@@ -81,6 +114,46 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
     }
   }, [currentNote.id, currentNote.content, otherNotes.length])
 
+  // Fetch neighbors lazily — only when the user opens the tab once
+  useEffect(() => {
+    if (tab !== 'neighbors') return
+    if (otherNotes.length === 0) return
+    const key = currentNote.id + currentNote.content.slice(0, 200)
+    if (key === prevNeighborRef.current && neighborsLoaded) return
+    prevNeighborRef.current = key
+
+    if (neighborDebounceRef.current) clearTimeout(neighborDebounceRef.current)
+    neighborDebounceRef.current = setTimeout(async () => {
+      setNeighborsLoading(true)
+      try {
+        const res = await fetch('/api/neighbors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ currentNote, otherNotes }),
+        })
+        const data = (await res.json()) as NeighborData
+        setNeighbors({
+          topical: data.topical ?? [],
+          semantic: data.semantic ?? [],
+          gap: data.gap ?? null,
+        })
+        setNeighborsLoaded(true)
+      } finally {
+        setNeighborsLoading(false)
+      }
+    }, 400)
+
+    return () => {
+      if (neighborDebounceRef.current) clearTimeout(neighborDebounceRef.current)
+    }
+  }, [tab, currentNote.id, currentNote.content, otherNotes.length, neighborsLoaded])
+
+  // Reset neighbor cache when the active note changes
+  useEffect(() => {
+    setNeighborsLoaded(false)
+    setNeighbors({ topical: [], semantic: [], gap: null })
+  }, [currentNote.id])
+
   const noteMap = Object.fromEntries(otherNotes.map((n) => [n.id, n]))
   const confirmedLinks = getLinksForNote(currentNote.id)
 
@@ -109,10 +182,26 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
       }).slice(0, 6)
     : []
 
+  function handleCreateGap(concept: string, rationale: string) {
+    const note = addNote(
+      concept,
+      `# ${concept}\n\n${rationale ? `_${rationale}_\n\n` : ''}(suggested by Notework — concept that would bridge what you already know)\n`,
+    )
+    confirmLink(currentNote.id, note.id, `Bridges to "${concept}" gap concept`)
+    showToast(`Drafted "${concept}" — opening it now`, { variant: 'success' })
+    setTimeout(() => {
+      try {
+        localStorage.setItem('notework_selected_note', note.id)
+      } catch {}
+      router.push('/app')
+      onSelect(note.id)
+    }, 100)
+  }
+
   return (
     <div
       style={{
-        width: 280,
+        width: 300,
         flexShrink: 0,
         borderLeft: '1px solid var(--border)',
         background: 'var(--bg-card)',
@@ -121,29 +210,37 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
         overflowY: 'auto',
       }}
     >
-      {/* Suggested section */}
+      {/* Tabs */}
       <div
         style={{
-          padding: '1rem 1.1rem',
-          borderBottom: '1px solid var(--border)',
-          fontSize: '0.78rem',
-          fontWeight: 600,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          color: 'var(--ink-faint)',
           display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-card)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 5,
         }}
       >
-        <svg viewBox="0 0 24 24" style={{ width: 13, height: 13, stroke: 'var(--accent)', fill: 'none', strokeWidth: 2 }}>
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-        </svg>
-        Related
+        <TabButton active={tab === 'related'} onClick={() => setTab('related')}>
+          Related
+        </TabButton>
+        <TabButton active={tab === 'neighbors'} onClick={() => setTab('neighbors')}>
+          Neighbors
+        </TabButton>
       </div>
 
-      {isLoading && (
+      {tab === 'neighbors' && (
+        <NeighborsTab
+          loading={neighborsLoading}
+          loaded={neighborsLoaded}
+          neighbors={neighbors}
+          noteMap={noteMap}
+          onSelect={onSelect}
+          onCreateGap={handleCreateGap}
+        />
+      )}
+
+      {tab === 'related' && isLoading && (
         <div style={{ padding: '0.75rem 1rem' }}>
           {[1, 2, 3].map((i) => (
             <div key={i} style={{ marginBottom: '0.85rem' }}>
@@ -154,15 +251,15 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
         </div>
       )}
 
-      {!isLoading && visibleSuggestions.length === 0 && confirmedLinks.length === 0 && (
-        <div style={{ padding: '1.1rem', fontSize: '0.92rem', color: 'var(--ink-faint)', textAlign: 'center', lineHeight: 1.55 }}>
+      {tab === 'related' && !isLoading && visibleSuggestions.length === 0 && confirmedLinks.length === 0 && (
+        <div style={{ padding: '1.25rem 1.1rem', fontSize: '0.95rem', color: 'var(--ink-faint)', textAlign: 'center', lineHeight: 1.55 }}>
           {otherNotes.length === 0
-            ? 'Add more notes to see connections.'
-            : 'No new suggestions.'}
+            ? 'Add another note to start seeing connections.'
+            : 'No new suggestions yet — keep writing and Notework will surface links.'}
         </div>
       )}
 
-      {!isLoading && visibleSuggestions.map(({ id, reason, confidence }) => {
+      {tab === 'related' && !isLoading && visibleSuggestions.map(({ id, reason, confidence }) => {
         const note = noteMap[id]
         if (!note) return null
         const pct = confidence != null ? Math.round(confidence * 100) : null
@@ -256,7 +353,7 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
       })}
 
       {/* Confirmed connections section */}
-      {confirmedLinks.length > 0 && (
+      {tab === 'related' && confirmedLinks.length > 0 && (
         <>
           <div
             style={{
@@ -324,7 +421,7 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
       )}
 
       {/* Manual connect section */}
-      {otherNotes.length > 0 && (
+      {tab === 'related' && otherNotes.length > 0 && (
         <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border)' }}>
           <div
             style={{
@@ -408,6 +505,314 @@ export default function SuggestionsPanel({ currentNote, otherNotes, onSelect }: 
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1,
+        background: 'transparent',
+        border: 'none',
+        borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent',
+        padding: '0.85rem 0',
+        fontSize: '0.9rem',
+        fontWeight: active ? 700 : 500,
+        letterSpacing: '0.04em',
+        color: active ? 'var(--ink)' : 'var(--ink-faint)',
+        cursor: 'pointer',
+        transition: 'all 0.15s',
+        fontFamily: 'inherit',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function NeighborsTab({
+  loading,
+  loaded,
+  neighbors,
+  noteMap,
+  onSelect,
+  onCreateGap,
+}: {
+  loading: boolean
+  loaded: boolean
+  neighbors: { topical: Neighbor[]; semantic: Neighbor[]; gap: GapConcept | null }
+  noteMap: Record<string, Note>
+  onSelect: (id: string) => void
+  onCreateGap: (concept: string, rationale: string) => void
+}) {
+  const empty =
+    loaded &&
+    neighbors.topical.length === 0 &&
+    neighbors.semantic.length === 0 &&
+    !neighbors.gap
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {loading && (
+        <div style={{ padding: '0.95rem 1.1rem' }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ marginBottom: '1rem' }}>
+              <div
+                style={{
+                  height: 12,
+                  width: `${60 + i * 10}%`,
+                  background: 'var(--border)',
+                  borderRadius: 4,
+                  marginBottom: 6,
+                  animation: 'skeletonPulse 1.5s ease-in-out infinite',
+                }}
+              />
+              <div
+                style={{
+                  height: 8,
+                  width: `${75 - i * 8}%`,
+                  background: 'var(--border)',
+                  borderRadius: 3,
+                  animation:
+                    'skeletonPulse 1.5s ease-in-out 0.15s infinite',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && empty && (
+        <div
+          style={{
+            padding: '1.25rem 1.1rem',
+            fontSize: '0.95rem',
+            color: 'var(--ink-faint)',
+            textAlign: 'center',
+            lineHeight: 1.55,
+          }}
+        >
+          Not enough notes for a neighborhood yet — write a few more and the
+          surrounding ideas will surface here.
+        </div>
+      )}
+
+      {!loading && neighbors.topical.length > 0 && (
+        <NeighborSection
+          title="Closest by topic"
+          icon={
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="var(--accent)" strokeWidth="2" fill="none">
+              <circle cx="12" cy="12" r="3" />
+              <circle cx="12" cy="12" r="9" opacity="0.4" />
+            </svg>
+          }
+          neighbors={neighbors.topical}
+          noteMap={noteMap}
+          onSelect={onSelect}
+        />
+      )}
+
+      {!loading && neighbors.semantic.length > 0 && (
+        <NeighborSection
+          title="You wouldn't have searched for this"
+          icon={
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="#fbbf24" strokeWidth="2" fill="none">
+              <polygon points="12 2 15 9 22 9.3 16.5 14 18 22 12 18 6 22 7.5 14 2 9.3 9 9" />
+            </svg>
+          }
+          accent="#fbbf24"
+          neighbors={neighbors.semantic}
+          noteMap={noteMap}
+          onSelect={onSelect}
+        />
+      )}
+
+      {!loading && neighbors.gap && (
+        <div
+          style={{
+            margin: '0.85rem 1rem',
+            padding: '1rem 1.1rem',
+            borderTop: '1px solid var(--border)',
+            borderRight: '1px solid rgba(126,232,162,0.3)',
+            borderBottom: '1px solid rgba(126,232,162,0.3)',
+            borderLeft: '3px solid var(--accent)',
+            background: 'var(--accent-light)',
+            borderRadius: 12,
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--accent)',
+              marginBottom: '0.45rem',
+            }}
+          >
+            ⊕ Bridge concept
+          </div>
+          <div
+            style={{
+              fontSize: '1.05rem',
+              fontWeight: 600,
+              color: 'var(--ink)',
+              marginBottom: '0.4rem',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {neighbors.gap.concept}
+          </div>
+          {neighbors.gap.rationale && (
+            <p
+              style={{
+                fontSize: '0.85rem',
+                color: 'var(--ink-muted)',
+                lineHeight: 1.55,
+                margin: '0 0 0.75rem',
+              }}
+            >
+              {neighbors.gap.rationale}
+            </p>
+          )}
+          <button
+            onClick={() =>
+              onCreateGap(
+                neighbors.gap!.concept,
+                neighbors.gap!.rationale,
+              )
+            }
+            style={{
+              background: 'var(--accent)',
+              color: '#0E0E0C',
+              border: 'none',
+              borderRadius: 8,
+              padding: '0.45rem 0.85rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              letterSpacing: '0.02em',
+            }}
+          >
+            Draft a note on this →
+          </button>
+        </div>
+      )}
+
+      {!loading && loaded && (
+        <div
+          style={{
+            marginTop: 'auto',
+            padding: '0.85rem 1.1rem',
+            borderTop: '1px solid var(--border)',
+            fontSize: '0.78rem',
+            color: 'var(--ink-faint)',
+            lineHeight: 1.5,
+          }}
+        >
+          Neighbors are computed from your own notes — not the public internet.
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NeighborSection({
+  title,
+  icon,
+  accent,
+  neighbors,
+  noteMap,
+  onSelect,
+}: {
+  title: string
+  icon: React.ReactNode
+  accent?: string
+  neighbors: Neighbor[]
+  noteMap: Record<string, Note>
+  onSelect: (id: string) => void
+}) {
+  return (
+    <div>
+      <div
+        style={{
+          padding: '0.95rem 1.1rem 0.5rem',
+          fontSize: '0.7rem',
+          fontWeight: 700,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: accent ?? 'var(--ink-faint)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        }}
+      >
+        {icon}
+        {title}
+      </div>
+      {neighbors.map((n) => {
+        const note = noteMap[n.id]
+        if (!note) return null
+        return (
+          <button
+            key={n.id}
+            onClick={() => onSelect(n.id)}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              background: 'transparent',
+              border: 'none',
+              borderTop: '1px solid var(--border)',
+              padding: '0.85rem 1.1rem',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) =>
+              ((e.currentTarget as HTMLButtonElement).style.background =
+                'var(--bg-elevated)')
+            }
+            onMouseLeave={(e) =>
+              ((e.currentTarget as HTMLButtonElement).style.background =
+                'transparent')
+            }
+          >
+            <div
+              style={{
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                color: 'var(--ink)',
+                marginBottom: '0.25rem',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {note.title || 'Untitled'}
+            </div>
+            <div
+              style={{
+                fontSize: '0.82rem',
+                color: 'var(--ink-muted)',
+                lineHeight: 1.5,
+              }}
+            >
+              {n.reason}
+            </div>
+          </button>
+        )
+      })}
     </div>
   )
 }

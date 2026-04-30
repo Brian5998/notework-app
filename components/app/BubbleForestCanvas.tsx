@@ -3,13 +3,13 @@
 import { useRef, useEffect, useCallback } from 'react'
 import {
   forceSimulation,
-  forceManyBody,
-  forceCollide,
   forceCenter,
+  forceLink,
   forceX,
   forceY,
   type Simulation,
   type SimulationNodeDatum,
+  type SimulationLinkDatum,
 } from 'd3-force'
 import { CLUSTER_COLORS, type ClusterColorKey } from '@/lib/clusterColors'
 
@@ -99,14 +99,14 @@ type SimNode = SimBubble | SimNote
 const BG_COLOR = '#050a18'
 const GRID_COLOR = 'rgba(120,150,210,0.045)'
 
-const NOTE_R_BASE = 24
-const NOTE_R_PER_LINK = 2.2
-const NOTE_R_MAX = 38
+const NOTE_R_BASE = 32
+const NOTE_R_PER_LINK = 2.6
+const NOTE_R_MAX = 50
 
 function bubbleRadiusForCount(n: number): number {
-  // Parent size — unchanged from original tuning.
-  // 3 notes ≈ 126, 5 notes ≈ 145, 8 notes ≈ 167, 16 ≈ 212
-  return Math.max(80, 60 + Math.sqrt(n) * 38)
+  // Parent size — bumped up to accommodate the larger note nodes inside.
+  // 3 notes ≈ 142, 5 notes ≈ 160, 8 notes ≈ 182, 16 ≈ 224
+  return Math.max(95, 70 + Math.sqrt(n) * 38)
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -185,6 +185,9 @@ export default function BubbleForestCanvas({
 
   // ── Build / rebuild the simulation when topology changes ──────────────────
   useEffect(() => {
+    // Topology signature includes edges so we recompute bubble↔bubble link
+    // forces when edges shift (otherwise newly-connected clusters wouldn't
+    // pull together).
     const sig =
       bubbles
         .map((b) => `${b.id}:${b.noteIds.length}:${b.colorKey}`)
@@ -194,7 +197,13 @@ export default function BubbleForestCanvas({
       notes
         .map((n) => `${n.id}:${n.bubbleId}`)
         .sort()
-        .join('|')
+        .join('|') +
+      '||' +
+      edges
+        .filter((e) => e.confirmed)
+        .map((e) => [e.source, e.target].sort().join('-'))
+        .sort()
+        .join(',')
 
     if (sig === prevSigRef.current && simRef.current) return
     const isFirstBuild = prevSigRef.current === ''
@@ -228,14 +237,23 @@ export default function BubbleForestCanvas({
     })
     const bubbleById = new Map(simBubbles.map((b) => [b.id, b]))
 
+    // Deterministic initial spread — notes start arranged around their
+    // bubble center on a regular polygon, so even brand-new bubbles never
+    // start with stacked nodes. Subsequent ticks let physics take over.
+    const noteIndexInBubble: Record<string, number> = {}
     const simNotes: SimNote[] = notes.map((n) => {
       const ex = existingNotes.get(n.id)
       const parent = bubbleById.get(n.bubbleId)
       const cx = parent?.x ?? 0
       const cy = parent?.y ?? 0
       const r = parent?.radius ?? 100
-      const ang = Math.random() * Math.PI * 2
-      const dist = Math.random() * (r * 0.55)
+      const idx = (noteIndexInBubble[n.bubbleId] =
+        (noteIndexInBubble[n.bubbleId] ?? -1) + 1)
+      const siblings = bubbles.find((b) => b.id === n.bubbleId)?.noteCount ?? 1
+      const ang =
+        (idx / Math.max(siblings, 1)) * Math.PI * 2 +
+        Math.PI / 4 // small offset so positions don't align with bubble label
+      const dist = r * 0.45
       const radius = Math.min(
         NOTE_R_MAX,
         NOTE_R_BASE + Math.min(n.connectionCount, 6) * NOTE_R_PER_LINK,
@@ -258,7 +276,10 @@ export default function BubbleForestCanvas({
     bubblesRef.current = simBubbles
     notesRef.current = simNotes
 
-    // Containment force — keeps notes inside their parent bubble
+    // ── Containment force ───────────────────────────────────────────────────
+    // Pulls each note toward its parent bubble, then hard-clamps to the
+    // bubble's interior. Tripled the prior strength because the kind-aware
+    // collide below no longer fights it.
     const containmentForce = () => {
       const force = (alpha: number) => {
         const bubMap = new Map<string, SimBubble>()
@@ -266,24 +287,170 @@ export default function BubbleForestCanvas({
         for (const n of simNotes) {
           const b = bubMap.get(n.bubbleId)
           if (!b || b.x == null || b.y == null || n.x == null || n.y == null) continue
-          // Soft pull toward bubble center
-          n.vx = (n.vx ?? 0) + (b.x - n.x) * alpha * 0.18
-          n.vy = (n.vy ?? 0) + (b.y - n.y) * alpha * 0.18
+          // Strong pull toward bubble center
+          n.vx = (n.vx ?? 0) + (b.x - n.x) * alpha * 0.55
+          n.vy = (n.vy ?? 0) + (b.y - n.y) * alpha * 0.55
           // Hard clamp — never escape the bubble
           const dx = n.x - b.x
           const dy = n.y - b.y
           const d = Math.hypot(dx, dy)
-          const inner = Math.max(0, b.radius - n.radius - 8)
+          const inner = Math.max(0, b.radius - n.radius - 6)
           if (d > inner && d > 0) {
             const k = inner / d
             n.x = b.x + dx * k
             n.y = b.y + dy * k
-            n.vx = (n.vx ?? 0) * 0.4
-            n.vy = (n.vy ?? 0) * 0.4
+            n.vx = (n.vx ?? 0) * 0.35
+            n.vy = (n.vy ?? 0) * 0.35
           }
         }
       }
-      // d3-force calls .initialize but we don't need it
+      ;(force as unknown as { initialize: () => void }).initialize = () => {}
+      return force as unknown as (alpha: number) => void
+    }
+
+    // ── Kind-aware collide ──────────────────────────────────────────────────
+    // CRITICAL: d3-force's stock forceCollide runs between EVERY pair of
+    // nodes. That meant a bubble was constantly colliding with every note
+    // inside it (since the note's position is by definition inside the
+    // bubble's collision radius), launching bubbles outward every tick. This
+    // custom force only collides bubble↔bubble and note↔sibling-note.
+    //
+    // We run multiple Jacobi iterations per tick (like d3-force does) so
+    // overlaps actually fully resolve instead of just dampening over many
+    // ticks — this is what stops sibling notes from looking stacked.
+    const kindCollideForce = () => {
+      const BUBBLE_PAD = 28
+      const NOTE_PAD = 8
+      const NOTE_ITERATIONS = 4
+
+      const resolvePair = (a: SimNode, b: SimNode, minD: number) => {
+        if (a.x == null || a.y == null || b.x == null || b.y == null) return
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+        const d2 = dx * dx + dy * dy
+        if (d2 >= minD * minD) return
+        let d = Math.sqrt(d2)
+        let ux: number, uy: number
+        if (d < 0.001) {
+          // Two nodes exactly stacked — push them apart along a stable axis
+          const angle = (a.x * 7919 + a.y * 6571) % (Math.PI * 2)
+          ux = Math.cos(angle)
+          uy = Math.sin(angle)
+          d = 0.001
+        } else {
+          ux = dx / d
+          uy = dy / d
+        }
+        const overlap = (minD - d) * 0.5
+        a.x -= ux * overlap
+        a.y -= uy * overlap
+        b.x += ux * overlap
+        b.y += uy * overlap
+      }
+
+      const force = () => {
+        // Bubble ↔ Bubble (one pass — bubbles never start stacked)
+        for (let i = 0; i < simBubbles.length; i++) {
+          const a = simBubbles[i]
+          for (let j = i + 1; j < simBubbles.length; j++) {
+            const b = simBubbles[j]
+            resolvePair(a, b, a.radius + b.radius + BUBBLE_PAD * 2)
+          }
+        }
+        // Note ↔ Sibling Note — bucket by parent bubble first
+        const byBubble = new Map<string, SimNote[]>()
+        for (const n of simNotes) {
+          let arr = byBubble.get(n.bubbleId)
+          if (!arr) {
+            arr = []
+            byBubble.set(n.bubbleId, arr)
+          }
+          arr.push(n)
+        }
+        // Multi-iteration Jacobi relaxation for sibling notes — ensures
+        // that even if 3+ notes started in the same spot, they fully spread
+        for (let iter = 0; iter < NOTE_ITERATIONS; iter++) {
+          for (const arr of byBubble.values()) {
+            if (arr.length < 2) continue
+            for (let i = 0; i < arr.length; i++) {
+              const a = arr[i]
+              for (let j = i + 1; j < arr.length; j++) {
+                const b = arr[j]
+                resolvePair(a, b, a.radius + b.radius + NOTE_PAD * 2)
+              }
+            }
+          }
+        }
+      }
+      ;(force as unknown as { initialize: () => void }).initialize = () => {}
+      return force as unknown as (alpha: number) => void
+    }
+
+    // ── Kind-aware charge (Coulomb-style repulsion) ─────────────────────────
+    // Same fix as collide, but for the inverse-square repulsion. Bubbles
+    // repel each other; sibling notes repel each other (so they spread out
+    // inside their bubble); nothing else.
+    const kindChargeForce = () => {
+      const BUBBLE_K = 1500 // repulsion magnitude — tuned so bubbles space
+      // out without overpowering link/center forces
+      const NOTE_SIBLING_K = 280
+      const BUBBLE_MAX_DIST = 900
+      const NOTE_MAX_DIST = 220
+      const force = (alpha: number) => {
+        // Bubble ↔ Bubble
+        for (let i = 0; i < simBubbles.length; i++) {
+          const a = simBubbles[i]
+          if (a.x == null || a.y == null) continue
+          for (let j = i + 1; j < simBubbles.length; j++) {
+            const b = simBubbles[j]
+            if (b.x == null || b.y == null) continue
+            const dx = b.x - a.x
+            const dy = b.y - a.y
+            const d2 = dx * dx + dy * dy
+            if (d2 > BUBBLE_MAX_DIST * BUBBLE_MAX_DIST) continue
+            const d = Math.sqrt(d2) || 0.01
+            const mag = (BUBBLE_K * alpha) / Math.max(d2, 100)
+            const fx = (mag * dx) / d
+            const fy = (mag * dy) / d
+            a.vx = (a.vx ?? 0) - fx
+            a.vy = (a.vy ?? 0) - fy
+            b.vx = (b.vx ?? 0) + fx
+            b.vy = (b.vy ?? 0) + fy
+          }
+        }
+        // Note ↔ Sibling Note
+        const byBubble = new Map<string, SimNote[]>()
+        for (const n of simNotes) {
+          let arr = byBubble.get(n.bubbleId)
+          if (!arr) {
+            arr = []
+            byBubble.set(n.bubbleId, arr)
+          }
+          arr.push(n)
+        }
+        for (const arr of byBubble.values()) {
+          for (let i = 0; i < arr.length; i++) {
+            const a = arr[i]
+            if (a.x == null || a.y == null) continue
+            for (let j = i + 1; j < arr.length; j++) {
+              const b = arr[j]
+              if (b.x == null || b.y == null) continue
+              const dx = b.x - a.x
+              const dy = b.y - a.y
+              const d2 = dx * dx + dy * dy
+              if (d2 > NOTE_MAX_DIST * NOTE_MAX_DIST) continue
+              const d = Math.sqrt(d2) || 0.01
+              const mag = (NOTE_SIBLING_K * alpha) / Math.max(d2, 25)
+              const fx = (mag * dx) / d
+              const fy = (mag * dy) / d
+              a.vx = (a.vx ?? 0) - fx
+              a.vy = (a.vy ?? 0) - fy
+              b.vx = (b.vx ?? 0) + fx
+              b.vy = (b.vy ?? 0) + fy
+            }
+          }
+        }
+      }
       ;(force as unknown as { initialize: () => void }).initialize = () => {}
       return force as unknown as (alpha: number) => void
     }
@@ -331,32 +498,76 @@ export default function BubbleForestCanvas({
       return force as unknown as (alpha: number) => void
     }
 
+    // ── Inter-bubble link force ─────────────────────────────────────────────
+    // Compute one link per pair of bubbles connected by ≥1 confirmed edge.
+    // Distance shrinks as the number of cross-cluster connections grows
+    // (more shared concepts → tighter coupling), with strength capped so
+    // the force never overwhelms collision.
+    const noteToBubble = new Map<string, string>()
+    for (const sn of simNotes) noteToBubble.set(sn.id, sn.bubbleId)
+
+    type BubbleLink = SimulationLinkDatum<SimBubble> & {
+      source: string | SimBubble
+      target: string | SimBubble
+      count: number
+    }
+    const pairCounts = new Map<string, number>()
+    for (const e of edges) {
+      if (!e.confirmed) continue
+      const aB = noteToBubble.get(e.source)
+      const bB = noteToBubble.get(e.target)
+      if (!aB || !bB || aB === bB) continue
+      const key = [aB, bB].sort().join('||')
+      pairCounts.set(key, (pairCounts.get(key) ?? 0) + 1)
+    }
+    const bubbleLinks: BubbleLink[] = [...pairCounts.entries()].map(
+      ([key, count]) => {
+        const [a, b] = key.split('||')
+        return { source: a, target: b, count }
+      },
+    )
+
+    if (simRef.current) simRef.current.stop()
+
     const sim = forceSimulation<SimNode>(allNodes)
-      .alpha(isFirstBuild ? 1 : 0.45)
-      .alphaDecay(0.03)
-      .velocityDecay(0.42)
+      .alpha(isFirstBuild ? 1 : 0.55)
+      .alphaDecay(0.035)
+      // alphaMin > default so the sim actually halts and stops drifting
+      .alphaMin(0.025)
+      .velocityDecay(0.55)
+      // Kind-aware forces — bubbles only interact with bubbles, sibling
+      // notes only interact with each other. This is the actual fix.
+      .force('charge', kindChargeForce())
+      .force('collide', kindCollideForce())
+      // Link force between bubbles that share confirmed cross-cluster edges
       .force(
-        'charge',
-        forceManyBody<SimNode>()
-          .strength((d) => (d._kind === 'bubble' ? -900 : -70))
-          .distanceMax(900),
+        'bubbleLinks',
+        forceLink<SimNode, BubbleLink>(bubbleLinks)
+          .id((d) => d.id)
+          .distance((l) => {
+            const a = bubbleById.get(
+              typeof l.source === 'string' ? l.source : l.source.id,
+            )
+            const b = bubbleById.get(
+              typeof l.target === 'string' ? l.target : l.target.id,
+            )
+            const base = (a?.radius ?? 100) + (b?.radius ?? 100) + 80
+            return Math.max(150, base / Math.sqrt(l.count))
+          })
+          .strength((l) => Math.min(0.85, 0.32 + l.count * 0.12)),
       )
-      .force(
-        'collide',
-        forceCollide<SimNode>()
-          .radius((d) => (d._kind === 'bubble' ? d.radius + 20 : d.radius + 3))
-          .strength(0.95)
-          .iterations(2),
-      )
-      .force('center', forceCenter(0, 0).strength(0.06))
+      // Strong center + gravity so disconnected bubbles never drift away
+      .force('center', forceCenter(0, 0).strength(0.12))
       .force(
         'gravityX',
-        forceX<SimNode>(0).strength((d) => (d._kind === 'bubble' ? 0.035 : 0)),
+        forceX<SimNode>(0).strength((d) => (d._kind === 'bubble' ? 0.08 : 0)),
       )
       .force(
         'gravityY',
-        forceY<SimNode>(0).strength((d) => (d._kind === 'bubble' ? 0.035 : 0)),
+        forceY<SimNode>(0).strength((d) => (d._kind === 'bubble' ? 0.08 : 0)),
       )
+      // Containment runs LAST so its hard-clamp overrides any leftover
+      // misalignment between notes and bubbles.
       .force('contain', containmentForce())
       .force('bounds', boundsForce())
 
@@ -365,7 +576,7 @@ export default function BubbleForestCanvas({
     })
 
     simRef.current = sim
-  }, [bubbles, notes])
+  }, [bubbles, notes, edges])
 
   // ── Continuous draw loop (always running for animations) ──────────────────
   const draw = useCallback(() => {
@@ -496,23 +707,23 @@ export default function BubbleForestCanvas({
       ctx.stroke()
       ctx.restore()
 
-      // Label at top of bubble
-      ctx.font = `600 ${Math.max(11, 13 / zoomRef.current)}px var(--font-syne, system-ui, sans-serif)`
+      // Label at top of bubble — bumped from 13px to 18px and weight 700
+      ctx.font = `700 ${Math.max(15, 18 / zoomRef.current)}px var(--font-syne, system-ui, sans-serif)`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'bottom'
       ctx.fillStyle = palette.border
-      ctx.globalAlpha = isHover ? 1 : 0.92
-      const labelY = b.y - b.radius - 10 / zoomRef.current
+      ctx.globalAlpha = isHover ? 1 : 0.95
+      const labelY = b.y - b.radius - 12 / zoomRef.current
       ctx.fillText(b.label, b.x, labelY)
       ctx.globalAlpha = 1
 
-      // Note count badge
-      ctx.font = `400 ${Math.max(9, 10 / zoomRef.current)}px var(--font-dm-mono, ui-monospace, monospace)`
-      ctx.fillStyle = 'rgba(255,255,255,0.45)'
+      // Note count badge — also bumped
+      ctx.font = `500 ${Math.max(11, 12 / zoomRef.current)}px var(--font-dm-mono, ui-monospace, monospace)`
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'
       ctx.fillText(
         `${b.noteCount} note${b.noteCount !== 1 ? 's' : ''}`,
         b.x,
-        labelY - 14 / zoomRef.current,
+        labelY - 18 / zoomRef.current,
       )
     }
 

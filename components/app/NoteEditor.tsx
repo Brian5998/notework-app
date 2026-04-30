@@ -141,9 +141,16 @@ export default function NoteEditor({ note, contradictions, onViewContradictions,
         width: '100%',
       }}
     >
-      {/* Date + Edit/Preview toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.4rem' }}>
-        <div style={{ fontSize: '0.95rem', color: 'var(--ink-faint)', letterSpacing: '0.05em' }}>{date}</div>
+      {/* Top bar — date + consistency pill + Edit/Preview toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.4rem', gap: '0.85rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{ fontSize: '0.95rem', color: 'var(--ink-faint)', letterSpacing: '0.05em' }}>{date}</div>
+          <ConsistencyPill
+            count={contradictions.length}
+            onClick={onViewContradictions}
+            inForest={contradictionInForest}
+          />
+        </div>
         <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
           {(['edit', 'preview'] as const).map((m) => (
             <button
@@ -167,46 +174,6 @@ export default function NoteEditor({ note, contradictions, onViewContradictions,
           ))}
         </div>
       </div>
-
-      {/* Contradiction banner */}
-      {contradictions.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.85rem 1.1rem',
-            marginBottom: '1.25rem',
-            borderLeft: '3px solid var(--warning)',
-            background: 'rgba(224, 176, 90, 0.08)',
-            borderRadius: '0 8px 8px 0',
-          }}
-        >
-          <span style={{ fontSize: '0.95rem', color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <svg viewBox="0 0 24 24" style={{ width: 16, height: 16, stroke: 'var(--warning)', fill: 'none', strokeWidth: 2, flexShrink: 0 }}>
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            This note conflicts with {contradictions.length} other {contradictions.length === 1 ? 'note' : 'notes'}.
-          </span>
-          <button
-            onClick={onViewContradictions}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '0.9rem',
-              color: contradictionInForest ? 'var(--accent)' : 'var(--warning)',
-              cursor: 'pointer',
-              fontWeight: 500,
-              padding: '0 0.25rem',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {contradictionInForest ? 'View in Forest →' : 'View →'}
-          </button>
-        </div>
-      )}
 
       {/* Title */}
       <input
@@ -377,5 +344,61 @@ export default function NoteEditor({ note, contradictions, onViewContradictions,
         )}
       </div>
     </div>
+  )
+}
+
+function ConsistencyPill({
+  count,
+  onClick,
+  inForest,
+}: {
+  count: number
+  onClick: () => void
+  inForest?: boolean
+}) {
+  const isClean = count === 0
+  const color = isClean ? 'var(--accent)' : '#ef4444'
+  const bg = isClean ? 'var(--accent-light)' : 'rgba(239,68,68,0.12)'
+  const border = isClean ? 'var(--accent-mid)' : 'rgba(239,68,68,0.45)'
+
+  return (
+    <button
+      onClick={isClean ? undefined : onClick}
+      title={
+        isClean
+          ? 'No contradictions detected in this note'
+          : `${count} contradiction${count === 1 ? '' : 's'} — click to review`
+      }
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.45rem',
+        padding: '0.35rem 0.75rem',
+        background: bg,
+        border: `1px solid ${border}`,
+        borderRadius: 99,
+        color,
+        fontSize: '0.85rem',
+        fontWeight: 600,
+        letterSpacing: '0.02em',
+        cursor: isClean ? 'default' : 'pointer',
+        transition: 'all 0.15s',
+        fontFamily: 'inherit',
+      }}
+    >
+      <span
+        style={{
+          width: 7,
+          height: 7,
+          borderRadius: '50%',
+          background: color,
+          boxShadow: `0 0 8px ${color}`,
+          flexShrink: 0,
+        }}
+      />
+      {isClean
+        ? 'Consistent'
+        : `${count} conflict${count === 1 ? '' : 's'}${inForest ? ' · view in Forest' : ''}`}
+    </button>
   )
 }

@@ -212,9 +212,59 @@ export default function NotesList({ notes, selectedId, onSelect, onDelete, getCo
       {/* Notes list */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 0.75rem' }}>
         {displayedNotes.length === 0 && (
-          <p style={{ padding: '1.5rem 1rem', fontSize: '0.95rem', color: 'var(--ink-faint)', textAlign: 'center' }}>
-            {filterQuery ? 'No notes match.' : 'No notes yet. Create your first one.'}
-          </p>
+          <div
+            style={{
+              padding: '1.75rem 1rem',
+              fontSize: '0.95rem',
+              color: 'var(--ink-faint)',
+              textAlign: 'center',
+              lineHeight: 1.55,
+            }}
+          >
+            {filterQuery ? (
+              <>
+                No notes match <strong style={{ color: 'var(--ink-muted)' }}>&ldquo;{filterQuery}&rdquo;</strong>.
+                <br />
+                <button
+                  onClick={() => setFilterQuery('')}
+                  style={{
+                    marginTop: '0.65rem',
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    color: 'var(--ink-muted)',
+                    padding: '0.4rem 0.85rem',
+                    borderRadius: 8,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Clear filter
+                </button>
+              </>
+            ) : (
+              <>
+                No notes yet.
+                <br />
+                <span style={{ color: 'var(--ink-muted)' }}>Hit </span>
+                <kbd
+                  style={{
+                    display: 'inline-block',
+                    padding: '0.1rem 0.45rem',
+                    borderRadius: 6,
+                    background: 'var(--bg-elevated-2)',
+                    border: '1px solid var(--border)',
+                    fontSize: '0.8rem',
+                    fontFamily: 'inherit',
+                    color: 'var(--ink-muted)',
+                    margin: '0 0.2rem',
+                  }}
+                >
+                  + New Note
+                </kbd>{' '}
+                <span style={{ color: 'var(--ink-muted)' }}>below to start.</span>
+              </>
+            )}
+          </div>
         )}
         {displayedNotes.map((note, idx) => {
           const conflictCount = getContradictionsForNote?.(note.id).length ?? 0

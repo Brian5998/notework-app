@@ -1,5 +1,11 @@
 // Theme colors for cluster bubbles in the Forest View.
 // Used by both Part 1 (default fallback) and Part 2 (Claude-classified).
+//
+// Palette goals:
+// - Each color is distinguishable from every other at small sizes
+// - All colors live in the same brightness range (no muddy or too-bright)
+// - Slightly desaturated jewel tones — sit comfortably on a #050a18 bg
+// - Always at least 6 distinct hues so adjacent clusters don't share a color
 
 export type ClusterColorKey =
   | 'stem'
@@ -7,6 +13,10 @@ export type ClusterColorKey =
   | 'science'
   | 'finance'
   | 'language'
+  | 'arts'
+  | 'social'
+  | 'tech'
+  | 'health'
   | 'unassigned'
 
 export type ClusterColor = {
@@ -18,6 +28,7 @@ export type ClusterColor = {
 }
 
 export const CLUSTER_COLORS: Record<ClusterColorKey, ClusterColor> = {
+  // Cool blue — STEM, math, CS, optimization
   stem: {
     fill: 'rgba(59,130,246,0.10)',
     border: '#60a5fa',
@@ -25,6 +36,7 @@ export const CLUSTER_COLORS: Record<ClusterColorKey, ClusterColor> = {
     glow: 'rgba(96,165,250,0.55)',
     label: 'STEM / Math / CS',
   },
+  // Lavender — humanities, history, philosophy
   humanities: {
     fill: 'rgba(168,85,247,0.10)',
     border: '#c084fc',
@@ -32,13 +44,15 @@ export const CLUSTER_COLORS: Record<ClusterColorKey, ClusterColor> = {
     glow: 'rgba(192,132,252,0.55)',
     label: 'Humanities / Writing',
   },
+  // Emerald — biology, chemistry, neuroscience
   science: {
     fill: 'rgba(34,197,94,0.10)',
     border: '#4ade80',
     node: '#86efac',
     glow: 'rgba(74,222,128,0.55)',
-    label: 'Science / Environment',
+    label: 'Science / Biology',
   },
+  // Amber — finance, economics, markets
   finance: {
     fill: 'rgba(245,158,11,0.10)',
     border: '#fbbf24',
@@ -46,6 +60,7 @@ export const CLUSTER_COLORS: Record<ClusterColorKey, ClusterColor> = {
     glow: 'rgba(251,191,36,0.55)',
     label: 'Economics / Finance',
   },
+  // Pink — language, linguistics
   language: {
     fill: 'rgba(236,72,153,0.10)',
     border: '#f472b6',
@@ -53,6 +68,39 @@ export const CLUSTER_COLORS: Record<ClusterColorKey, ClusterColor> = {
     glow: 'rgba(244,114,182,0.55)',
     label: 'Language / Culture',
   },
+  // Coral — arts, design, music
+  arts: {
+    fill: 'rgba(251,113,133,0.10)',
+    border: '#fb7185',
+    node: '#fda4af',
+    glow: 'rgba(251,113,133,0.5)',
+    label: 'Arts / Design',
+  },
+  // Teal — sociology, anthropology, politics
+  social: {
+    fill: 'rgba(20,184,166,0.10)',
+    border: '#2dd4bf',
+    node: '#5eead4',
+    glow: 'rgba(45,212,191,0.55)',
+    label: 'Social Sciences',
+  },
+  // Indigo — engineering, software, deep tech
+  tech: {
+    fill: 'rgba(99,102,241,0.10)',
+    border: '#818cf8',
+    node: '#a5b4fc',
+    glow: 'rgba(129,140,248,0.55)',
+    label: 'Engineering / Tech',
+  },
+  // Salmon — psychology, cognition, health
+  health: {
+    fill: 'rgba(248,113,113,0.10)',
+    border: '#fca5a5',
+    node: '#fecaca',
+    glow: 'rgba(252,165,165,0.55)',
+    label: 'Psychology / Health',
+  },
+  // Stone — fallback when nothing else matches
   unassigned: {
     fill: 'rgba(107,114,128,0.10)',
     border: '#9ca3af',
@@ -68,6 +116,10 @@ const ALL_KEYS: ClusterColorKey[] = [
   'science',
   'finance',
   'language',
+  'arts',
+  'social',
+  'tech',
+  'health',
   'unassigned',
 ]
 
@@ -83,18 +135,29 @@ export function inferColorKey(label: string): ClusterColorKey {
 
   // Course code prefixes (strongest signal when present)
   if (/\b(orf|cos|mat|ele|mae|ece|eas|cbe|cs|ee|ma|mat)\s*\d/.test(l)) {
-    // ORF 335 = finance-y, but ORF 307 = stem. Use finer check below.
     if (/\b(orf\s*3[3-4]\d|orf\s*4[0-5]\d|fin|econ)\b/.test(l)) return 'finance'
+    if (/\b(cos|cs|ele|ece|mae|cbe|ee|eng)\s*\d/.test(l)) return 'tech'
     return 'stem'
   }
-  if (/\b(neu|psy|eeb|mol|che|phy|geo|ast)\s*\d/.test(l)) return 'science'
-  if (/\b(his|phi|rel|art|cla|eng|mus|afs|ams|gss)\s*\d/.test(l)) return 'humanities'
-  if (/\b(soc|pol|ant|woc)\s*\d/.test(l)) return 'humanities'
+  if (/\b(neu|psy)\s*\d/.test(l)) return 'health'
+  if (/\b(eeb|mol|che|phy|geo|ast)\s*\d/.test(l)) return 'science'
+  if (/\b(art|mus|tha|vis|dan)\s*\d/.test(l)) return 'arts'
+  if (/\b(his|phi|rel|cla|eng|afs|ams|gss)\s*\d/.test(l)) return 'humanities'
+  if (/\b(soc|pol|ant|woc)\s*\d/.test(l)) return 'social'
   if (/\b(lin|spa|fre|ger|chi|jpn|kor|ita|por|rus)\s*\d/.test(l)) return 'language'
 
-  // STEM: math, optimization, CS, ML, engineering
+  // Engineering / software / tech (more specific than STEM)
   if (
-    /\b(math|calc|algebra|stat|optim|linear|simplex|duality|matrix|vector|differential|integral|derivative|gradient|algorithm|complexity|np[- ]?hard|graph theory|data structure|computer|programming|software|machine learning|\bml\b|neural net|deep learning|\bai\b|engineering|kernel|regression|probability|combinator|discrete math|proof|theorem|lemma|topology|analysis)\b/.test(
+    /\b(software|programming|computer|algorithm|data structure|graph theory|machine learning|\bml\b|deep learning|neural net|\bai\b|engineering|robotic|systems|architect|cybersec|crypto|blockchain|kernel|operating system|\bos\b|distributed|networking)\b/.test(
+      l,
+    )
+  ) {
+    return 'tech'
+  }
+
+  // STEM: math, optimization, theoretical CS
+  if (
+    /\b(math|calc|algebra|stat|optim|linear|simplex|duality|matrix|vector|differential|integral|derivative|gradient|complexity|np[- ]?hard|probability|combinator|discrete math|proof|theorem|lemma|topology|analysis|set theory|number theory)\b/.test(
       l,
     )
   ) {
@@ -110,18 +173,45 @@ export function inferColorKey(label: string): ClusterColorKey {
     return 'finance'
   }
 
-  // Natural science (biology / chemistry / neuroscience / physics-of-world)
+  // Psychology / cognition / health
   if (
-    /\b(biolog|cell|protein|enzyme|photosynth|respir|mitosis|meiosis|dna|rna|genom|evolut|organism|specie|ecolog|environment|climate|geolog|astron|cosmolog|chem|bond|molecul|acid|base|thermo|reaction|equilibrium|neuron|synap|neuro|brain|ltp|action potential|membrane|receptor|cortex|hippocamp|amygdala|dopamine|serotonin|anatomy|physiolog|disease|pathol|cancer|drug|medicine|pharma)\b/.test(
+    /\b(psycholog|cognit|behaviour|behavior|memory|perception|emotion|motivation|consciousness|kahneman|tversky|freud|piaget|sleep|stress|disease|pathol|cancer|drug|medicine|pharma|clinical|therapy|disorder|mental health)\b/.test(
+      l,
+    )
+  ) {
+    return 'health'
+  }
+
+  // Natural science (biology / chemistry / neuroscience / physics)
+  if (
+    /\b(biolog|cell|protein|enzyme|photosynth|respir|mitosis|meiosis|dna|rna|genom|evolut|organism|specie|ecolog|environment|climate|geolog|astron|cosmolog|chem|bond|molecul|acid|base|thermo|reaction|equilibrium|neuron|synap|neuro|brain|ltp|action potential|membrane|receptor|cortex|hippocamp|amygdala|dopamine|serotonin|anatomy|physiolog|physic|quantum|relativity)\b/.test(
       l,
     )
   ) {
     return 'science'
   }
 
-  // Humanities / writing / sociology / philosophy / history
+  // Social sciences (sociology, anthropology, politics)
   if (
-    /\b(history|historic|literature|philosoph|writing|essay|rhetoric|critique|theology|religion|sociolog|durkheim|weber|marx\b(?!et)|anthropolog|culture(?!\s*:)|ethnograph|media studies|art history|painting|sculpture|music theory|musicolog)\b/.test(
+    /\b(sociolog|durkheim|weber|anthropolog|ethnograph|politic|election|democrac|authoritarian|government|policy|public administration|international relations|geopolit|race|gender|inequality)\b/.test(
+      l,
+    )
+  ) {
+    return 'social'
+  }
+
+  // Arts / design / music
+  if (
+    /\b(art history|painting|sculpture|music theory|musicolog|composer|design|typography|architect|film|cinema|theater|theatre|dance|choreograph|photograph|aesthet|graphic design|industrial design)\b/.test(
+      l,
+    )
+  ) {
+    return 'arts'
+  }
+
+  // Humanities / writing / philosophy / history / religion
+  if (
+    /\b(history|historic|literature|philosoph|writing|essay|rhetoric|critique|theology|religion|culture(?!\s*:)|media studies|humanit)\b/.test(
       l,
     )
   ) {
